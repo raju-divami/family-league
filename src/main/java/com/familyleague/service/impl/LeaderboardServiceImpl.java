@@ -39,9 +39,15 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     public void recalculateLeaderboard(Long seasonId) {
         log.info("Recalculating leaderboard for season: {}", seasonId);
         
+        // Clear existing point transactions for this season
+        pointTransactionRepository.deleteBySeasonId(seasonId);
+        
         // Reset all leaderboard entries for this season
         List<Leaderboard> leaderboardEntries = leaderboardRepository.findBySeasonId(seasonId);
-        leaderboardEntries.forEach(entry -> entry.setTotalPoints(0));
+        leaderboardEntries.forEach(entry -> {
+            entry.setTotalPoints(0);
+            entry.setRecalculatedAt(java.time.LocalDateTime.now());
+        });
         
         // Get all completed matches with results
         List<MatchResult> results = resultRepository.findByMatchSeasonId(seasonId);
@@ -50,10 +56,39 @@ public class LeaderboardServiceImpl implements LeaderboardService {
             List<MatchPrediction> predictions = predictionRepository.findByMatchId(result.getMatch().getId());
             
             for (MatchPrediction prediction : predictions) {
-                int points = calculatePoints(prediction, result);
+                int pointsEarned = 0;
                 
-                if (points > 0) {
-                    // Update leaderboard
+                // Check winner prediction (1 point)
+                if (prediction.getPredictedWinnerTeam() != null && result.getWinnerTeam() != null &&
+                        prediction.getPredictedWinnerTeam().getId().equals(result.getWinnerTeam().getId())) {
+                    pointsEarned++;
+                    createPointTransaction(prediction, result, "MATCH_WINNER", 1);
+                }
+                
+                // Check toss winner prediction (1 point)
+                if (prediction.getPredictedTossTeam() != null && result.getTossWinnerTeam() != null &&
+                        prediction.getPredictedTossTeam().getId().equals(result.getTossWinnerTeam().getId())) {
+                    pointsEarned++;
+                    createPointTransaction(prediction, result, "TOSS_WINNER", 1);
+                }
+                
+                // Check player of match prediction (1 point)
+                if (prediction.getPredictedPlayer() != null && result.getPlayerOfMatch() != null &&
+                        prediction.getPredictedPlayer().getId().equals(result.getPlayerOfMatch().getId())) {
+                    pointsEarned++;
+                    createPointTransaction(prediction, result, "PLAYER_OF_MATCH", 1);
+                }
+                
+                // Handle tie scenarios: if match is a tie and user predicted tie, award 1 point
+                // (This is in addition to other predictions)
+                if (result.isTie() && prediction.getPredictedWinnerTeam() == null) {
+                    // User predicted a tie by not selecting a winner
+                    pointsEarned++;
+                    createPointTransaction(prediction, result, "TIE_PREDICTION", 1);
+                }
+                
+                // Update leaderboard entry
+                if (pointsEarned > 0) {
                     Leaderboard entry = leaderboardRepository
                             .findBySeasonIdAndUserId(seasonId, prediction.getUser().getId())
                             .orElseGet(() -> Leaderboard.builder()
@@ -63,32 +98,23 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                                     .rankNo(0)
                                     .build());
                     
-                    entry.setTotalPoints(entry.getTotalPoints() + points);
+                    entry.setTotalPoints(entry.getTotalPoints() + pointsEarned);
+                    entry.setRecalculatedAt(java.time.LocalDateTime.now());
                     leaderboardRepository.save(entry);
-                    
-                    // Create point transaction
-                    PointTransaction transaction = PointTransaction.builder()
-                            .user(prediction.getUser())
-                            .season(result.getMatch().getSeason())
-                            .sourceType("MATCH_PREDICTION")
-                            .sourceId(result.getMatch().getId())
-                            .ruleCode(points == 10 ? "EXACT_WINNER" : points == 5 ? "WINNER_ONLY" : "TOSS_WINNER")
-                            .points(points)
-                            .build();
-                    pointTransactionRepository.save(transaction);
                 }
             }
         }
         
-        // Update ranks
+        // Update ranks based on total points (higher points = better rank)
         List<Leaderboard> sortedEntries = leaderboardRepository.findBySeasonIdOrderByTotalPointsDesc(seasonId);
         int rank = 1;
         for (Leaderboard entry : sortedEntries) {
             entry.setRankNo(rank++);
+            entry.setRecalculatedAt(java.time.LocalDateTime.now());
             leaderboardRepository.save(entry);
         }
         
-        log.info("Leaderboard recalculation completed for season: {}", seasonId);
+        log.info("Leaderboard recalculation completed for season: {} with {} entries", seasonId, sortedEntries.size());
     }
 
     @Override
@@ -105,27 +131,18 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         return transactions.stream().map(pointTransactionMapper::toResponse).toList();
     }
     
-    private int calculatePoints(MatchPrediction prediction, MatchResult result) {
-        int points = 0;
-        
-        // Winner prediction + Toss winner: 10 points
-        if (prediction.getPredictedWinnerTeam() != null && result.getWinnerTeam() != null &&
-                prediction.getPredictedWinnerTeam().getId().equals(result.getWinnerTeam().getId()) &&
-                prediction.getPredictedTossTeam() != null && result.getTossWinnerTeam() != null &&
-                prediction.getPredictedTossTeam().getId().equals(result.getTossWinnerTeam().getId())) {
-            points = 10;
-        }
-        // Winner prediction only: 5 points
-        else if (prediction.getPredictedWinnerTeam() != null && result.getWinnerTeam() != null &&
-                prediction.getPredictedWinnerTeam().getId().equals(result.getWinnerTeam().getId())) {
-            points = 5;
-        }
-        // Toss winner only: 2 points
-        else if (prediction.getPredictedTossTeam() != null && result.getTossWinnerTeam() != null &&
-                prediction.getPredictedTossTeam().getId().equals(result.getTossWinnerTeam().getId())) {
-            points = 2;
-        }
-        
-        return points;
+    /**
+     * Helper method to create a point transaction record
+     */
+    private void createPointTransaction(MatchPrediction prediction, MatchResult result, String ruleCode, int points) {
+        PointTransaction transaction = PointTransaction.builder()
+                .user(prediction.getUser())
+                .season(result.getMatch().getSeason())
+                .sourceType("MATCH")
+                .sourceId(result.getMatch().getId())
+                .ruleCode(ruleCode)
+                .points(points)
+                .build();
+        pointTransactionRepository.save(transaction);
     }
 }

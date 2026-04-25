@@ -135,11 +135,18 @@ public class MatchPredictionServiceImpl implements MatchPredictionService {
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
         
-        // Predictions visible only after lock time per requirements
+        // Before lock: show only requesting user's prediction
+        // After lock: show all predictions
         if (LocalDateTime.now().isBefore(match.getPredictionLockTime())) {
-            throw new BusinessException("Predictions not visible until lock time");
+            log.debug("Before lock time - returning only requesting user's prediction for match: {}", matchId);
+            // Return only the requesting user's prediction if it exists
+            return predictionRepository.findByMatchIdAndUserId(matchId, requestingUserId)
+                    .map(predictionMapper::toMatchResponse)
+                    .map(List::of)
+                    .orElse(List.of()); // Return empty list if user hasn't predicted yet
         }
         
+        log.debug("After lock time - returning all predictions for match: {}", matchId);
         List<MatchPrediction> predictions = predictionRepository.findByMatchId(matchId);
         return predictions.stream().map(predictionMapper::toMatchResponse).toList();
     }

@@ -1,5 +1,6 @@
 package com.familyleague.entity;
 
+import com.familyleague.config.AuditEntityListener;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,13 +18,15 @@ import java.time.LocalDateTime;
  * - Primary key (id)
  * - Audit fields (createdAt, createdBy, updatedAt, updatedBy)
  * - Soft delete support (deleted)
+ * - Automatic audit logging (insert/update/delete operations logged to audit_logs table)
  * 
  * Uses Spring Data JPA auditing for automatic population of audit fields.
+ * Uses AuditEntityListener for comprehensive audit logging.
  */
 @Getter
 @Setter
 @MappedSuperclass
-@EntityListeners(AuditingEntityListener.class)
+@EntityListeners({AuditingEntityListener.class, AuditEntityListener.class})
 public abstract class BaseEntity {
 
     @Id

@@ -12,10 +12,12 @@ import com.familyleague.repository.MatchRepository;
 import com.familyleague.repository.MatchResultRepository;
 import com.familyleague.repository.PlayerRepository;
 import com.familyleague.repository.TeamRepository;
+import com.familyleague.service.EmailService;
 import com.familyleague.service.LeaderboardService;
 import com.familyleague.service.MatchResultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,10 @@ public class MatchResultServiceImpl implements MatchResultService {
     private final PlayerRepository playerRepository;
     private final MatchResultMapper resultMapper;
     private final LeaderboardService leaderboardService;
+    private final EmailService emailService;
+    
+    @Value("${app.admin.email:admin@familyleague.com}")
+    private String adminEmail;
 
     @Override
     @Transactional
@@ -66,7 +72,7 @@ public class MatchResultServiceImpl implements MatchResultService {
             builder.playerOfMatch(player);
         }
         
-        builder.tie(request.isTie())
+        builder.tie(request.getIsTie() != null ? request.getIsTie() : false)
                 .remarks(request.getRemarks())
                 .publishedBy(adminId)
                 .publishedAt(LocalDateTime.now());
@@ -90,12 +96,52 @@ public class MatchResultServiceImpl implements MatchResultService {
         return resultMapper.toResponse(result);
     }
     
+    /**
+     * Asynchronously recalculates the leaderboard and sends email notification to admin.
+     * Executes in a separate thread using the configured task executor.
+     * 
+     * @param seasonId The season ID for which to recalculate the leaderboard
+     */
     @Async
     protected void recalculateLeaderboardAsync(Long seasonId) {
         try {
+            log.info("Starting async leaderboard recalculation for season: {}", seasonId);
             leaderboardService.recalculateLeaderboard(seasonId);
+            
+            // Send success notification to admin
+            String subject = "Leaderboard Recalculation Completed - Season " + seasonId;
+            String body = String.format(
+                "Hello Admin,\n\n" +
+                "The leaderboard for Season %d has been successfully recalculated.\n\n" +
+                "Timestamp: %s\n\n" +
+                "Best regards,\n" +
+                "Family League System",
+                seasonId,
+                LocalDateTime.now()
+            );
+            
+            emailService.sendEmailAsync(adminEmail, subject, body);
+            log.info("Leaderboard recalculation completed and admin notified for season: {}", seasonId);
+            
         } catch (Exception e) {
             log.error("Error recalculating leaderboard for season: {}", seasonId, e);
+            
+            // Send failure notification to admin
+            String subject = "Leaderboard Recalculation Failed - Season " + seasonId;
+            String body = String.format(
+                "Hello Admin,\n\n" +
+                "The leaderboard recalculation for Season %d has failed.\n\n" +
+                "Error: %s\n" +
+                "Timestamp: %s\n\n" +
+                "Please check the system logs for more details.\n\n" +
+                "Best regards,\n" +
+                "Family League System",
+                seasonId,
+                e.getMessage(),
+                LocalDateTime.now()
+            );
+            
+            emailService.sendEmailAsync(adminEmail, subject, body);
         }
     }
 }

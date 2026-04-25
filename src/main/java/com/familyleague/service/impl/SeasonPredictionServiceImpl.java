@@ -112,18 +112,37 @@ public class SeasonPredictionServiceImpl implements SeasonPredictionService {
         LeagueSeason season = seasonRepository.findById(seasonId)
                 .orElseThrow(() -> new ResourceNotFoundException("Season not found: " + seasonId));
         
-        // Predictions visible only after lock time (4 hours before first match)
+        // Calculate lock time
         if (season.getFirstMatchStartTime() == null) {
-            throw new BusinessException("Season predictions not visible until lock time is set");
+            log.debug("No first match time set - returning only requesting user's prediction");
+            // If no first match time, return only requesting user's prediction
+            return predictionRepository.findBySeasonIdAndUserId(seasonId, requestingUserId)
+                    .map(pred -> {
+                        List<SeasonPredictionPosition> positions = positionRepository.findByPredictionIdOrderByRankPosition(pred.getId());
+                        return predictionMapper.toSeasonResponse(pred, positions);
+                    })
+                    .map(List::of)
+                    .orElse(List.of());
         }
         
         int lockHours = season.getPredictionLockHours() != null ? season.getPredictionLockHours() : 4;
         LocalDateTime lockTime = season.getFirstMatchStartTime().minusHours(lockHours);
         
+        // Before lock: show only requesting user's prediction
+        // After lock: show all predictions
         if (LocalDateTime.now().isBefore(lockTime)) {
-            throw new BusinessException("Season predictions not visible until lock time: " + lockTime);
+            log.debug("Before lock time - returning only requesting user's prediction for season: {}", seasonId);
+            // Return only the requesting user's prediction if it exists
+            return predictionRepository.findBySeasonIdAndUserId(seasonId, requestingUserId)
+                    .map(pred -> {
+                        List<SeasonPredictionPosition> positions = positionRepository.findByPredictionIdOrderByRankPosition(pred.getId());
+                        return predictionMapper.toSeasonResponse(pred, positions);
+                    })
+                    .map(List::of)
+                    .orElse(List.of()); // Return empty list if user hasn't predicted yet
         }
         
+        log.debug("After lock time - returning all predictions for season: {}", seasonId);
         List<SeasonPrediction> predictions = predictionRepository.findBySeasonId(seasonId);
         return predictions.stream()
                 .map(pred -> {

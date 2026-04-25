@@ -18,4 +18,6 @@ public interface PointTransactionRepository extends JpaRepository<PointTransacti
     Integer sumPointsBySeasonAndUser(Long seasonId, Long userId);
 
     boolean existsBySourceTypeAndSourceIdAndUserId(String sourceType, Long sourceId, Long userId);
+
+    void deleteBySeasonId(Long seasonId);
 }

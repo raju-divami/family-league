@@ -17,14 +17,13 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Match Results")
 @RestController
-@RequestMapping("/api/matches")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
 public class MatchResultController {
 
     private final MatchResultService matchResultService;
 
-    @PostMapping("/{matchId}/result")
+    @PostMapping("/admin/matches/{matchId}/result")
     @Operation(summary = "Publish match result (Admin only)")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<MatchResultResponse>> publishResult(
@@ -35,7 +34,7 @@ public class MatchResultController {
                 matchResultService.publishResult(matchId, request, principal.getId())));
     }
 
-    @GetMapping("/{matchId}/result")
+    @GetMapping("/api/matches/{matchId}/result")
     @Operation(summary = "Get result for a match")
     public ResponseEntity<ApiResponse<MatchResultResponse>> getResult(@PathVariable Long matchId) {
         return ResponseEntity.ok(ApiResponse.ok(matchResultService.getResultByMatchId(matchId)));

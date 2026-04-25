@@ -7,13 +7,13 @@ import lombok.Setter;
 @Setter
 public class PublishResultRequest {
 
-    private Long tossWinnerTeamId;
-
     private Long winnerTeamId;
+
+    private Long tossWinnerTeamId;
 
     private Long playerOfMatchId;
 
-    private boolean tie = false;
+    private Boolean isTie;
 
     private String remarks;
 }
