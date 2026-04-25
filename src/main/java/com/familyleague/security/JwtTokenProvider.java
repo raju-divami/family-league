@@ -4,20 +4,24 @@ import com.familyleague.config.JwtProperties;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class JwtTokenProvider {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
+
     private final JwtProperties jwtProperties;
+
+    public JwtTokenProvider(JwtProperties jwtProperties) {
+        this.jwtProperties = jwtProperties;
+    }
 
     private SecretKey signingKey() {
         return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
