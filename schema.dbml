@@ -1,0 +1,466 @@
+Project FamilyLeague {
+  database_type: "PostgreSQL"
+  Note: '''
+  Scalable normalized schema for Spring Boot + PostgreSQL.
+  Supports:
+  - Multi league templates and seasons
+  - Family/friends participation
+  - Match + season predictions
+  - Async leaderboard recalculation
+  - RBAC
+  - Notifications / email logs
+  - Soft delete + auditability
+  '''
+}
+
+//////////////////////////////////////////////////////
+// COMMON BASE PATTERN
+//////////////////////////////////////////////////////
+
+Table users {
+  id bigint [pk, increment]
+  email varchar(150) [unique, not null]
+  password_hash varchar(255)
+  provider varchar(30) [note: 'LOCAL / GOOGLE / OAUTH']
+  provider_user_id varchar(150)
+  status varchar(30) [not null, default: 'ACTIVE']
+  last_login_at timestamp
+
+  created_at timestamp
+  created_by bigint
+  updated_at timestamp
+  updated_by bigint
+  deleted boolean [default: false]
+}
+
+Table user_profiles {
+  id bigint [pk, increment]
+  user_id bigint [unique, not null]
+  display_name varchar(100)
+  avatar_name varchar(100)
+  profile_image_url varchar(500)
+
+  created_at timestamp
+  updated_at timestamp
+}
+
+//////////////////////////////////////////////////////
+// RBAC
+//////////////////////////////////////////////////////
+
+Table roles {
+  id bigint [pk, increment]
+  code varchar(50) [unique, not null]
+  name varchar(100)
+}
+
+Table permissions {
+  id bigint [pk, increment]
+  code varchar(100) [unique, not null]
+  name varchar(150)
+}
+
+Table role_permissions {
+  id bigint [pk, increment]
+  role_id bigint [not null]
+  permission_id bigint [not null]
+}
+
+Table user_roles {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  role_id bigint [not null]
+}
+
+//////////////////////////////////////////////////////
+// LEAGUE MASTER + SEASON
+//////////////////////////////////////////////////////
+
+Table leagues {
+  id bigint [pk, increment]
+  code varchar(50) [unique, not null]
+  name varchar(150) [not null]
+  sport_type varchar(50) [default: 'CRICKET']
+  description text
+
+  created_at timestamp
+  created_by bigint
+  updated_at timestamp
+  updated_by bigint
+  deleted boolean [default: false]
+}
+
+Table league_seasons {
+  id bigint [pk, increment]
+  league_id bigint [not null]
+  season_code varchar(50) [not null]
+  season_name varchar(150) [not null]
+
+  start_date date
+  end_date date
+
+  prediction_lock_hours int [default: 4]
+  match_prediction_lock_hours int [default: 1]
+
+  status varchar(30) [default: 'DRAFT']
+  // DRAFT, OPEN, LOCKED, ACTIVE, COMPLETED, CLOSED
+
+  first_match_start_time timestamp
+  closed_at timestamp
+
+  created_at timestamp
+  created_by bigint
+  updated_at timestamp
+  updated_by bigint
+  deleted boolean [default: false]
+
+  Indexes {
+    (league_id, season_code) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////
+// TEAM / PLAYER
+//////////////////////////////////////////////////////
+
+Table teams {
+  id bigint [pk, increment]
+  code varchar(50) [unique, not null]
+  name varchar(150) [not null]
+  short_name varchar(20)
+  logo_url varchar(500)
+
+  created_at timestamp
+  updated_at timestamp
+  deleted boolean [default: false]
+}
+
+Table season_teams {
+  id bigint [pk, increment]
+  season_id bigint [not null]
+  team_id bigint [not null]
+  seed_rank int
+
+  Indexes {
+    (season_id, team_id) [unique]
+  }
+}
+
+Table players {
+  id bigint [pk, increment]
+  code varchar(50) [unique]
+  full_name varchar(150) [not null]
+  short_name varchar(100)
+  country varchar(100)
+
+  created_at timestamp
+  updated_at timestamp
+  deleted boolean [default: false]
+}
+
+Table team_players {
+  id bigint [pk, increment]
+  season_team_id bigint [not null]
+  player_id bigint [not null]
+
+  Indexes {
+    (season_team_id, player_id) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////
+// MATCHES
+//////////////////////////////////////////////////////
+
+Table matches {
+  id bigint [pk, increment]
+  season_id bigint [not null]
+  match_no int
+  stage varchar(50) [default: 'LEAGUE']
+  // LEAGUE / QUALIFIER / FINAL etc
+
+  home_team_id bigint [not null]
+  away_team_id bigint [not null]
+
+  venue varchar(150)
+  start_time timestamp [not null]
+  prediction_lock_time timestamp [not null]
+
+  status varchar(30) [default: 'SCHEDULED']
+  // SCHEDULED, LOCKED, LIVE, COMPLETED, RESULT_PUBLISHED
+
+  created_at timestamp
+  created_by bigint
+  updated_at timestamp
+  updated_by bigint
+  deleted boolean [default: false]
+}
+
+Table match_results {
+  id bigint [pk, increment]
+  match_id bigint [unique, not null]
+
+  toss_winner_team_id bigint
+  winner_team_id bigint
+  player_of_match_id bigint
+
+  is_tie boolean [default: false]
+  remarks text
+
+  published_by bigint
+  published_at timestamp
+}
+
+//////////////////////////////////////////////////////
+// USER ENROLLMENT IN SEASON
+//////////////////////////////////////////////////////
+
+Table season_members {
+  id bigint [pk, increment]
+  season_id bigint [not null]
+  user_id bigint [not null]
+
+  joined_at timestamp
+  status varchar(30) [default: 'ACTIVE']
+
+  Indexes {
+    (season_id, user_id) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////
+// SEASON PREDICTION (FULL TABLE RANKING)
+//////////////////////////////////////////////////////
+
+Table season_predictions {
+  id bigint [pk, increment]
+  season_id bigint [not null]
+  user_id bigint [not null]
+
+  submitted_at timestamp
+  locked_at timestamp
+  status varchar(30) [default: 'SUBMITTED']
+
+  Indexes {
+    (season_id, user_id) [unique]
+  }
+}
+
+Table season_prediction_positions {
+  id bigint [pk, increment]
+  prediction_id bigint [not null]
+  rank_position int [not null]
+  team_id bigint [not null]
+
+  Indexes {
+    (prediction_id, rank_position) [unique]
+    (prediction_id, team_id) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////
+// MATCH PREDICTIONS
+//////////////////////////////////////////////////////
+
+Table match_predictions {
+  id bigint [pk, increment]
+  match_id bigint [not null]
+  season_id bigint [not null]
+  user_id bigint [not null]
+
+  predicted_winner_team_id bigint
+  predicted_toss_team_id bigint
+  predicted_player_id bigint
+
+  submitted_at timestamp
+  locked_at timestamp
+  status varchar(30) [default: 'SUBMITTED']
+
+  Indexes {
+    (match_id, user_id) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////
+// POINTS / LEADERBOARD
+//////////////////////////////////////////////////////
+
+Table scoring_rules {
+  id bigint [pk, increment]
+  code varchar(50) [unique]
+  description varchar(200)
+  points int [not null]
+}
+
+Table point_transactions {
+  id bigint [pk, increment]
+  season_id bigint [not null]
+  user_id bigint [not null]
+
+  source_type varchar(30) [not null]
+  // MATCH / SEASON
+
+  source_id bigint [not null]
+  rule_code varchar(50) [not null]
+  points int [not null]
+
+  created_at timestamp
+}
+
+Table leaderboards {
+  id bigint [pk, increment]
+  season_id bigint [not null]
+  user_id bigint [not null]
+
+  total_points int [default: 0]
+  rank_no int
+  recalculated_at timestamp
+
+  Indexes {
+    (season_id, user_id) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////
+// ASYNC JOBS
+//////////////////////////////////////////////////////
+
+Table job_executions {
+  id bigint [pk, increment]
+  job_type varchar(50)
+  reference_type varchar(50)
+  reference_id bigint
+
+  status varchar(30) [default: 'PENDING']
+  requested_at timestamp
+  started_at timestamp
+  completed_at timestamp
+
+  requested_by bigint
+  remarks text
+}
+
+//////////////////////////////////////////////////////
+// NOTIFICATIONS / EMAIL
+//////////////////////////////////////////////////////
+
+Table notification_templates {
+  id bigint [pk, increment]
+  code varchar(100) [unique]
+  subject varchar(250)
+  body text
+  channel varchar(30) [default: 'EMAIL']
+}
+
+Table notifications {
+  id bigint [pk, increment]
+  user_id bigint
+  template_id bigint
+
+  event_type varchar(100)
+  subject varchar(250)
+  message text
+
+  status varchar(30) [default: 'PENDING']
+  scheduled_at timestamp
+  sent_at timestamp
+  failure_reason text
+}
+
+Table admin_broadcasts {
+  id bigint [pk, increment]
+  created_by bigint
+  title varchar(200)
+  message text
+  event_type varchar(100)
+  created_at timestamp
+}
+
+Table admin_broadcast_users {
+  id bigint [pk, increment]
+  broadcast_id bigint
+  user_id bigint
+}
+
+//////////////////////////////////////////////////////
+// AUDIT
+//////////////////////////////////////////////////////
+
+Table audit_logs {
+  id bigint [pk, increment]
+  table_name varchar(100)
+  record_id bigint
+  action varchar(20)
+  old_data json
+  new_data json
+  changed_by bigint
+  changed_at timestamp
+}
+
+//////////////////////////////////////////////////////
+// DECISION LOG
+//////////////////////////////////////////////////////
+
+Table decision_logs {
+  id bigint [pk, increment]
+  title varchar(200)
+  decision text
+  justification text
+  created_by bigint
+  created_at timestamp
+}
+
+//////////////////////////////////////////////////////
+// RELATIONS
+//////////////////////////////////////////////////////
+
+Ref: user_profiles.user_id > users.id
+
+Ref: user_roles.user_id > users.id
+Ref: user_roles.role_id > roles.id
+
+Ref: role_permissions.role_id > roles.id
+Ref: role_permissions.permission_id > permissions.id
+
+Ref: league_seasons.league_id > leagues.id
+
+Ref: season_teams.season_id > league_seasons.id
+Ref: season_teams.team_id > teams.id
+
+Ref: team_players.season_team_id > season_teams.id
+Ref: team_players.player_id > players.id
+
+Ref: matches.season_id > league_seasons.id
+Ref: matches.home_team_id > teams.id
+Ref: matches.away_team_id > teams.id
+
+Ref: match_results.match_id > matches.id
+Ref: match_results.winner_team_id > teams.id
+Ref: match_results.toss_winner_team_id > teams.id
+Ref: match_results.player_of_match_id > players.id
+
+Ref: season_members.season_id > league_seasons.id
+Ref: season_members.user_id > users.id
+
+Ref: season_predictions.season_id > league_seasons.id
+Ref: season_predictions.user_id > users.id
+
+Ref: season_prediction_positions.prediction_id > season_predictions.id
+Ref: season_prediction_positions.team_id > teams.id
+
+Ref: match_predictions.match_id > matches.id
+Ref: match_predictions.season_id > league_seasons.id
+Ref: match_predictions.user_id > users.id
+
+Ref: leaderboards.season_id > league_seasons.id
+Ref: leaderboards.user_id > users.id
+
+Ref: point_transactions.season_id > league_seasons.id
+Ref: point_transactions.user_id > users.id
+
+Ref: notifications.user_id > users.id
+Ref: notifications.template_id > notification_templates.id
+
+Ref: admin_broadcasts.created_by > users.id
+Ref: admin_broadcast_users.broadcast_id > admin_broadcasts.id
+Ref: admin_broadcast_users.user_id > users.id
