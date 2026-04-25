@@ -1,14 +1,16 @@
 package com.familyleague.controller;
 
-import com.familyleague.dto.response.ApiResponse;
-import com.familyleague.dto.response.PagedResponse;
 import com.familyleague.dto.request.AddTeamToSeasonRequest;
 import com.familyleague.dto.request.CreateTeamRequest;
 import com.familyleague.dto.request.UpdateTeamRequest;
+import com.familyleague.dto.response.PagedResponse;
 import com.familyleague.dto.response.SeasonTeamResponse;
 import com.familyleague.dto.response.TeamResponse;
 import com.familyleague.service.TeamService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -29,59 +31,110 @@ public class TeamController {
     private final TeamService teamService;
 
     @PostMapping("/admin/teams")
-    @Operation(summary = "Create a team")
+    @Operation(summary = "Create a team", description = "Creates a global team record. Team code must be unique.")
     @PreAuthorize("hasRole('ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<ApiResponse<TeamResponse>> createTeam(@Valid @RequestBody CreateTeamRequest request) {
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Team created"),
+            @ApiResponse(responseCode = "400", description = "Validation error"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
+            @ApiResponse(responseCode = "409", description = "Team code already exists")
+    })
+    public ResponseEntity<com.familyleague.dto.response.ApiResponse<TeamResponse>> createTeam(
+            @Valid @RequestBody CreateTeamRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Team created", teamService.createTeam(request)));
+                .body(com.familyleague.dto.response.ApiResponse.ok("Team created",
+                        teamService.createTeam(request)));
     }
 
     @PutMapping("/admin/teams/{id}")
     @Operation(summary = "Update a team")
     @PreAuthorize("hasRole('ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<ApiResponse<TeamResponse>> updateTeam(
-            @PathVariable Long id,
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Team updated"),
+            @ApiResponse(responseCode = "400", description = "Validation error"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
+            @ApiResponse(responseCode = "404", description = "Team not found")
+    })
+    public ResponseEntity<com.familyleague.dto.response.ApiResponse<TeamResponse>> updateTeam(
+            @Parameter(description = "Team ID") @PathVariable Long id,
             @Valid @RequestBody UpdateTeamRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok("Team updated", teamService.updateTeam(id, request)));
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("Team updated",
+                teamService.updateTeam(id, request)));
     }
 
     @DeleteMapping("/admin/teams/{id}")
-    @Operation(summary = "Delete a team (soft delete)")
+    @Operation(summary = "Delete a team", description = "Soft-deletes the team (sets deleted=true).")
     @PreAuthorize("hasRole('ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<ApiResponse<Void>> deleteTeam(@PathVariable Long id) {
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Team deleted"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
+            @ApiResponse(responseCode = "404", description = "Team not found")
+    })
+    public ResponseEntity<com.familyleague.dto.response.ApiResponse<Void>> deleteTeam(
+            @Parameter(description = "Team ID") @PathVariable Long id) {
         teamService.deleteTeam(id);
-        return ResponseEntity.ok(ApiResponse.ok("Team deleted"));
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("Team deleted"));
     }
 
     @GetMapping("/api/teams/{id}")
     @Operation(summary = "Get team by ID")
-    public ResponseEntity<ApiResponse<TeamResponse>> getTeam(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.ok(teamService.getTeamById(id)));
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Team found"),
+            @ApiResponse(responseCode = "404", description = "Team not found")
+    })
+    public ResponseEntity<com.familyleague.dto.response.ApiResponse<TeamResponse>> getTeam(
+            @Parameter(description = "Team ID") @PathVariable Long id) {
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+                teamService.getTeamById(id)));
     }
 
     @GetMapping("/api/teams")
-    @Operation(summary = "List all teams")
-    public ResponseEntity<ApiResponse<PagedResponse<TeamResponse>>> getAllTeams(Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(teamService.getAllTeams(pageable)));
+    @Operation(summary = "List all teams", description = "Returns all non-deleted teams, paginated.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Teams returned")
+    })
+    public ResponseEntity<com.familyleague.dto.response.ApiResponse<PagedResponse<TeamResponse>>> getAllTeams(
+            Pageable pageable) {
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+                teamService.getAllTeams(pageable)));
     }
 
     @PostMapping("/admin/seasons/{seasonId}/teams")
-    @Operation(summary = "Add team to season")
+    @Operation(summary = "Add team to season",
+            description = "Assigns an existing global team to the given season, optionally with a seed rank.")
     @PreAuthorize("hasRole('ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<ApiResponse<SeasonTeamResponse>> addTeamToSeason(
-            @PathVariable Long seasonId,
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Team added to season"),
+            @ApiResponse(responseCode = "400", description = "Validation error"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
+            @ApiResponse(responseCode = "404", description = "Season or team not found"),
+            @ApiResponse(responseCode = "409", description = "Team already in this season")
+    })
+    public ResponseEntity<com.familyleague.dto.response.ApiResponse<SeasonTeamResponse>> addTeamToSeason(
+            @Parameter(description = "Season ID") @PathVariable Long seasonId,
             @Valid @RequestBody AddTeamToSeasonRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Team added to season", teamService.addTeamToSeason(seasonId, request)));
+                .body(com.familyleague.dto.response.ApiResponse.ok("Team added to season",
+                        teamService.addTeamToSeason(seasonId, request)));
     }
 
     @GetMapping("/api/seasons/{seasonId}/teams")
     @Operation(summary = "Get teams in a season")
-    public ResponseEntity<ApiResponse<List<SeasonTeamResponse>>> getTeamsBySeason(@PathVariable Long seasonId) {
-        return ResponseEntity.ok(ApiResponse.ok(teamService.getTeamsBySeason(seasonId)));
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Teams returned"),
+            @ApiResponse(responseCode = "404", description = "Season not found")
+    })
+    public ResponseEntity<com.familyleague.dto.response.ApiResponse<List<SeasonTeamResponse>>> getTeamsBySeason(
+            @Parameter(description = "Season ID") @PathVariable Long seasonId) {
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+                teamService.getTeamsBySeason(seasonId)));
     }
 }

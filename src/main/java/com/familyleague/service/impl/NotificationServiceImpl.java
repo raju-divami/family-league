@@ -69,6 +69,34 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
+    public void sendPredictionReminderToUser(Long matchId, Long userId) {
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+
+        String subject = "Reminder: Submit your prediction before lock";
+        String message = String.format(
+                "Hi %s, you haven't submitted your prediction for %s vs %s. Lock time: %s.",
+                user.getEmail(),
+                match.getHomeTeam().getName(),
+                match.getAwayTeam().getName(),
+                match.getPredictionLockTime());
+
+        Notification notification = Notification.builder()
+                .user(user)
+                .subject(subject)
+                .message(message)
+                .eventType("PREDICTION_REMINDER")
+                .status("SENT")
+                .build();
+        notificationRepository.save(notification);
+        emailService.sendEmailAsync(user.getEmail(), subject, message);
+        log.info("Prediction reminder sent to user {} for match {}", userId, matchId);
+    }
+
+    @Override
+    @Transactional
     public void sendResultNotificationToAdmin(Long matchId) {
         log.info("Sending result notification for match: {}", matchId);
         

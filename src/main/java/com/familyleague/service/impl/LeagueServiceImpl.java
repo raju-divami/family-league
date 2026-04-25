@@ -1,6 +1,7 @@
 package com.familyleague.service.impl;
 
 import com.familyleague.dto.request.CreateLeagueRequest;
+import com.familyleague.dto.request.UpdateLeagueRequest;
 import com.familyleague.dto.response.LeagueResponse;
 import com.familyleague.dto.response.PagedResponse;
 import com.familyleague.entity.League;
@@ -65,6 +66,21 @@ public class LeagueServiceImpl implements LeagueService {
                 .totalPages(leaguePage.getTotalPages())
                 .last(leaguePage.isLast())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public LeagueResponse updateLeague(Long id, UpdateLeagueRequest request) {
+        League league = leagueRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("League not found: " + id));
+
+        if (request.getName() != null) league.setName(request.getName());
+        if (request.getSportType() != null) league.setSportType(request.getSportType());
+        if (request.getDescription() != null) league.setDescription(request.getDescription());
+
+        league = leagueRepository.save(league);
+        log.info("League updated: {}", id);
+        return leagueMapper.toResponse(league);
     }
 
     @Override

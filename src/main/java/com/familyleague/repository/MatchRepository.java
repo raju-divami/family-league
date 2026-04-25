@@ -22,4 +22,7 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     List<Match> findByStatusAndStartTimeBefore(String status, LocalDateTime cutoff);
 
     List<Match> findBySeasonIdAndStatusAndDeletedFalse(Long seasonId, String status);
+
+    List<Match> findByStatusAndPredictionLockTimeBetweenAndDeletedFalse(
+            String status, LocalDateTime from, LocalDateTime to);
 }

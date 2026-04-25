@@ -9,6 +9,8 @@ public interface NotificationService {
 
     void sendMatchReminderNotifications(Long matchId);
 
+    void sendPredictionReminderToUser(Long matchId, Long userId);
+
     void sendResultNotificationToAdmin(Long matchId);
 
     void broadcast(BroadcastRequest request, Long adminId);
