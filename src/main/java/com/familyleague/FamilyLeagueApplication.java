@@ -1,4 +1,4 @@
-package com.family_league;
+package com.familyleague;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

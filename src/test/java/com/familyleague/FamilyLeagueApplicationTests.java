@@ -1,4 +1,4 @@
-package com.family_league;
+package com.familyleague;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
