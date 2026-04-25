@@ -2,8 +2,6 @@ package com.familyleague.entity;
 
 import com.familyleague.config.AuditEntityListener;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -12,19 +10,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
-/**
- * Base entity class providing common fields for all entities.
- * Includes:
- * - Primary key (id)
- * - Audit fields (createdAt, createdBy, updatedAt, updatedBy)
- * - Soft delete support (deleted)
- * - Automatic audit logging (insert/update/delete operations logged to audit_logs table)
- * 
- * Uses Spring Data JPA auditing for automatic population of audit fields.
- * Uses AuditEntityListener for comprehensive audit logging.
- */
-@Getter
-@Setter
 @MappedSuperclass
 @EntityListeners({AuditingEntityListener.class, AuditEntityListener.class})
 public abstract class BaseEntity {
@@ -52,4 +37,52 @@ public abstract class BaseEntity {
 
     @Column(name = "deleted", nullable = false)
     private boolean deleted = false;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Long getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(Long createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public Long getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public void setUpdatedBy(Long updatedBy) {
+        this.updatedBy = updatedBy;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
 }

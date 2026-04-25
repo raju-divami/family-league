@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,10 +24,13 @@ import java.util.List;
 
 @Tag(name = "Teams")
 @RestController
-@RequiredArgsConstructor
 public class TeamController {
 
     private final TeamService teamService;
+
+    public TeamController(TeamService teamService) {
+        this.teamService = teamService;
+    }
 
     @PostMapping("/admin/teams")
     @Operation(summary = "Create a team", description = "Creates a global team record. Team code must be unique.")
@@ -41,10 +43,10 @@ public class TeamController {
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
             @ApiResponse(responseCode = "409", description = "Team code already exists")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<TeamResponse>> createTeam(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<TeamResponse>> createTeam(
             @Valid @RequestBody CreateTeamRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(com.familyleague.dto.response.ApiResponse.ok("Team created",
+                .body(com.familyleague.dto.response.ApiResponseDto.ok("Team created",
                         teamService.createTeam(request)));
     }
 
@@ -59,10 +61,10 @@ public class TeamController {
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
             @ApiResponse(responseCode = "404", description = "Team not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<TeamResponse>> updateTeam(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<TeamResponse>> updateTeam(
             @Parameter(description = "Team ID") @PathVariable Long id,
             @Valid @RequestBody UpdateTeamRequest request) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("Team updated",
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("Team updated",
                 teamService.updateTeam(id, request)));
     }
 
@@ -76,10 +78,10 @@ public class TeamController {
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
             @ApiResponse(responseCode = "404", description = "Team not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<Void>> deleteTeam(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<Void>> deleteTeam(
             @Parameter(description = "Team ID") @PathVariable Long id) {
         teamService.deleteTeam(id);
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("Team deleted"));
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("Team deleted"));
     }
 
     @GetMapping("/api/teams/{id}")
@@ -88,9 +90,9 @@ public class TeamController {
             @ApiResponse(responseCode = "200", description = "Team found"),
             @ApiResponse(responseCode = "404", description = "Team not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<TeamResponse>> getTeam(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<TeamResponse>> getTeam(
             @Parameter(description = "Team ID") @PathVariable Long id) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 teamService.getTeamById(id)));
     }
 
@@ -99,9 +101,9 @@ public class TeamController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Teams returned")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<PagedResponse<TeamResponse>>> getAllTeams(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<PagedResponse<TeamResponse>>> getAllTeams(
             Pageable pageable) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 teamService.getAllTeams(pageable)));
     }
 
@@ -118,11 +120,11 @@ public class TeamController {
             @ApiResponse(responseCode = "404", description = "Season or team not found"),
             @ApiResponse(responseCode = "409", description = "Team already in this season")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<SeasonTeamResponse>> addTeamToSeason(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<SeasonTeamResponse>> addTeamToSeason(
             @Parameter(description = "Season ID") @PathVariable Long seasonId,
             @Valid @RequestBody AddTeamToSeasonRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(com.familyleague.dto.response.ApiResponse.ok("Team added to season",
+                .body(com.familyleague.dto.response.ApiResponseDto.ok("Team added to season",
                         teamService.addTeamToSeason(seasonId, request)));
     }
 
@@ -132,9 +134,9 @@ public class TeamController {
             @ApiResponse(responseCode = "200", description = "Teams returned"),
             @ApiResponse(responseCode = "404", description = "Season not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<List<SeasonTeamResponse>>> getTeamsBySeason(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<List<SeasonTeamResponse>>> getTeamsBySeason(
             @Parameter(description = "Season ID") @PathVariable Long seasonId) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 teamService.getTeamsBySeason(seasonId)));
     }
 }

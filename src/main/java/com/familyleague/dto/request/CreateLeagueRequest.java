@@ -3,11 +3,7 @@ package com.familyleague.dto.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter
-@Setter
 @Schema(description = "Payload for creating a new league")
 public class CreateLeagueRequest {
 
@@ -27,4 +23,13 @@ public class CreateLeagueRequest {
 
     @Schema(description = "Optional description", example = "IPL 2026 Season")
     private String description;
+
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getSportType() { return sportType; }
+    public void setSportType(String sportType) { this.sportType = sportType; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 }

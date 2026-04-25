@@ -1,15 +1,7 @@
 package com.familyleague.dto.request;
 
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
 
-/**
- * Request DTO for updating an existing team.
- * All fields are optional - only provided fields will be updated.
- */
-@Getter
-@Setter
 public class UpdateTeamRequest {
 
     @Size(max = 150)
@@ -20,4 +12,11 @@ public class UpdateTeamRequest {
 
     @Size(max = 500)
     private String logoUrl;
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getShortName() { return shortName; }
+    public void setShortName(String shortName) { this.shortName = shortName; }
+    public String getLogoUrl() { return logoUrl; }
+    public void setLogoUrl(String logoUrl) { this.logoUrl = logoUrl; }
 }

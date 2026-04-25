@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -20,11 +19,14 @@ import java.util.List;
 @Tag(name = "Leaderboard")
 @RestController
 @RequestMapping("/api/seasons/{seasonId}/leaderboard")
-@RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
 public class LeaderboardController {
 
     private final LeaderboardService leaderboardService;
+
+    public LeaderboardController(LeaderboardService leaderboardService) {
+        this.leaderboardService = leaderboardService;
+    }
 
     @GetMapping
     @Operation(summary = "Get leaderboard for a season",
@@ -34,9 +36,9 @@ public class LeaderboardController {
             @ApiResponse(responseCode = "401", description = "Not authenticated"),
             @ApiResponse(responseCode = "404", description = "Season not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<List<LeaderboardResponse>>> getLeaderboard(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<List<LeaderboardResponse>>> getLeaderboard(
             @Parameter(description = "Season ID") @PathVariable Long seasonId) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 leaderboardService.getLeaderboard(seasonId)));
     }
 
@@ -48,10 +50,10 @@ public class LeaderboardController {
             @ApiResponse(responseCode = "401", description = "Not authenticated"),
             @ApiResponse(responseCode = "404", description = "Season not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<List<PointTransactionResponse>>> getMyPoints(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<List<PointTransactionResponse>>> getMyPoints(
             @Parameter(description = "Season ID") @PathVariable Long seasonId,
             @AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 leaderboardService.getPointHistory(seasonId, principal.getId())));
     }
 }

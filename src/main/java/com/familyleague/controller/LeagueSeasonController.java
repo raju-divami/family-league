@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,11 +22,14 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Seasons")
 @RestController
-@RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
 public class LeagueSeasonController {
 
     private final LeagueSeasonService seasonService;
+
+    public LeagueSeasonController(LeagueSeasonService seasonService) {
+        this.seasonService = seasonService;
+    }
 
     @PostMapping("/admin/leagues/{leagueId}/seasons")
     @Operation(summary = "Create a season for a league",
@@ -41,11 +43,11 @@ public class LeagueSeasonController {
             @ApiResponse(responseCode = "404", description = "League not found"),
             @ApiResponse(responseCode = "409", description = "Season code already exists in this league")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<LeagueSeasonResponse>> createSeason(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<LeagueSeasonResponse>> createSeason(
             @Parameter(description = "League ID") @PathVariable Long leagueId,
             @Valid @RequestBody CreateSeasonRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                com.familyleague.dto.response.ApiResponse.ok("Season created",
+                com.familyleague.dto.response.ApiResponseDto.ok("Season created",
                         seasonService.createSeason(leagueId, request)));
     }
 
@@ -56,9 +58,9 @@ public class LeagueSeasonController {
             @ApiResponse(responseCode = "401", description = "Not authenticated"),
             @ApiResponse(responseCode = "404", description = "Season not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<LeagueSeasonResponse>> getSeason(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<LeagueSeasonResponse>> getSeason(
             @Parameter(description = "Season ID") @PathVariable Long seasonId) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 seasonService.getSeasonById(seasonId)));
     }
 
@@ -69,9 +71,9 @@ public class LeagueSeasonController {
             @ApiResponse(responseCode = "401", description = "Not authenticated"),
             @ApiResponse(responseCode = "404", description = "League not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<PagedResponse<LeagueSeasonResponse>>> getSeasonsByLeague(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<PagedResponse<LeagueSeasonResponse>>> getSeasonsByLeague(
             @Parameter(description = "League ID") @PathVariable Long leagueId, Pageable pageable) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 seasonService.getSeasonsByLeague(leagueId, pageable)));
     }
 
@@ -86,10 +88,10 @@ public class LeagueSeasonController {
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
             @ApiResponse(responseCode = "404", description = "Season not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<LeagueSeasonResponse>> updateStatus(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<LeagueSeasonResponse>> updateStatus(
             @Parameter(description = "Season ID") @PathVariable Long seasonId,
             @Valid @RequestBody UpdateSeasonStatusRequest request) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("Status updated",
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("Status updated",
                 seasonService.updateStatus(seasonId, request)));
     }
 
@@ -104,9 +106,9 @@ public class LeagueSeasonController {
             @ApiResponse(responseCode = "404", description = "Season not found"),
             @ApiResponse(responseCode = "409", description = "Season is not in DRAFT status")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<LeagueSeasonResponse>> openSeason(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<LeagueSeasonResponse>> openSeason(
             @Parameter(description = "Season ID") @PathVariable Long seasonId) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("Season opened",
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("Season opened",
                 seasonService.openSeason(seasonId)));
     }
 
@@ -120,10 +122,10 @@ public class LeagueSeasonController {
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
             @ApiResponse(responseCode = "404", description = "Season not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<Void>> closeSeason(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<Void>> closeSeason(
             @Parameter(description = "Season ID") @PathVariable Long seasonId) {
         seasonService.closeSeason(seasonId);
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("Season closed"));
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("Season closed"));
     }
 
     @GetMapping("/seasons")
@@ -132,9 +134,9 @@ public class LeagueSeasonController {
             @ApiResponse(responseCode = "200", description = "Seasons returned"),
             @ApiResponse(responseCode = "401", description = "Not authenticated")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<PagedResponse<LeagueSeasonResponse>>> getAllSeasons(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<PagedResponse<LeagueSeasonResponse>>> getAllSeasons(
             Pageable pageable) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 seasonService.getAllSeasons(pageable)));
     }
 
@@ -147,10 +149,10 @@ public class LeagueSeasonController {
             @ApiResponse(responseCode = "404", description = "Season not found"),
             @ApiResponse(responseCode = "409", description = "User is already a member of this season")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<Void>> joinSeason(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<Void>> joinSeason(
             @Parameter(description = "Season ID") @PathVariable Long seasonId,
             @AuthenticationPrincipal UserPrincipal principal) {
         seasonService.joinSeason(seasonId, principal.getId());
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("Joined season successfully"));
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("Joined season successfully"));
     }
 }

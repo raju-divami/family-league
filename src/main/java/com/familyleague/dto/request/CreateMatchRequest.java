@@ -2,13 +2,9 @@ package com.familyleague.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
 @Schema(description = "Payload for scheduling a match")
 public class CreateMatchRequest {
 
@@ -38,4 +34,19 @@ public class CreateMatchRequest {
     @Schema(description = "Match start date-time (ISO 8601)", example = "2026-03-21T19:30:00",
             requiredMode = Schema.RequiredMode.REQUIRED)
     private LocalDateTime startTime;
+
+    public Long getSeasonId() { return seasonId; }
+    public void setSeasonId(Long seasonId) { this.seasonId = seasonId; }
+    public Integer getMatchNo() { return matchNo; }
+    public void setMatchNo(Integer matchNo) { this.matchNo = matchNo; }
+    public String getStage() { return stage; }
+    public void setStage(String stage) { this.stage = stage; }
+    public Long getHomeTeamId() { return homeTeamId; }
+    public void setHomeTeamId(Long homeTeamId) { this.homeTeamId = homeTeamId; }
+    public Long getAwayTeamId() { return awayTeamId; }
+    public void setAwayTeamId(Long awayTeamId) { this.awayTeamId = awayTeamId; }
+    public String getVenue() { return venue; }
+    public void setVenue(String venue) { this.venue = venue; }
+    public LocalDateTime getStartTime() { return startTime; }
+    public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
 }

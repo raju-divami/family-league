@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,10 +22,13 @@ import java.util.List;
 
 @Tag(name = "Players")
 @RestController
-@RequiredArgsConstructor
 public class PlayerController {
 
     private final PlayerService playerService;
+
+    public PlayerController(PlayerService playerService) {
+        this.playerService = playerService;
+    }
 
     @PostMapping("/admin/players")
     @Operation(summary = "Create a player", description = "Creates a global player record. Player code must be unique.")
@@ -39,10 +41,10 @@ public class PlayerController {
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
             @ApiResponse(responseCode = "409", description = "Player code already exists")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<PlayerResponse>> createPlayer(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<PlayerResponse>> createPlayer(
             @Valid @RequestBody CreatePlayerRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(com.familyleague.dto.response.ApiResponse.ok("Player created",
+                .body(com.familyleague.dto.response.ApiResponseDto.ok("Player created",
                         playerService.createPlayer(request)));
     }
 
@@ -57,10 +59,10 @@ public class PlayerController {
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
             @ApiResponse(responseCode = "404", description = "Player not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<PlayerResponse>> updatePlayer(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<PlayerResponse>> updatePlayer(
             @Parameter(description = "Player ID") @PathVariable Long id,
             @Valid @RequestBody UpdatePlayerRequest request) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("Player updated",
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("Player updated",
                 playerService.updatePlayer(id, request)));
     }
 
@@ -70,9 +72,9 @@ public class PlayerController {
             @ApiResponse(responseCode = "200", description = "Player found"),
             @ApiResponse(responseCode = "404", description = "Player not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<PlayerResponse>> getPlayer(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<PlayerResponse>> getPlayer(
             @Parameter(description = "Player ID") @PathVariable Long id) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 playerService.getPlayerById(id)));
     }
 
@@ -81,9 +83,9 @@ public class PlayerController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Players returned")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<PagedResponse<PlayerResponse>>> getAllPlayers(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<PagedResponse<PlayerResponse>>> getAllPlayers(
             Pageable pageable) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 playerService.getAllPlayers(pageable)));
     }
 
@@ -99,11 +101,11 @@ public class PlayerController {
             @ApiResponse(responseCode = "404", description = "Season team or player not found"),
             @ApiResponse(responseCode = "409", description = "Player already in this team roster")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<Void>> addPlayerToTeam(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<Void>> addPlayerToTeam(
             @Parameter(description = "Season team ID") @PathVariable Long seasonTeamId,
             @Parameter(description = "Player ID") @PathVariable Long playerId) {
         playerService.addPlayerToTeam(seasonTeamId, playerId);
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("Player added to team"));
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("Player added to team"));
     }
 
     @GetMapping("/api/season-teams/{seasonTeamId}/players")
@@ -112,9 +114,9 @@ public class PlayerController {
             @ApiResponse(responseCode = "200", description = "Players returned"),
             @ApiResponse(responseCode = "404", description = "Season team not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<List<PlayerResponse>>> getPlayersBySeasonTeam(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<List<PlayerResponse>>> getPlayersBySeasonTeam(
             @Parameter(description = "Season team ID") @PathVariable Long seasonTeamId) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 playerService.getPlayersBySeasonTeam(seasonTeamId)));
     }
 }

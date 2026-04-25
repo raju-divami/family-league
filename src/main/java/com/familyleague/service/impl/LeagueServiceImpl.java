@@ -10,37 +10,42 @@ import com.familyleague.exception.ResourceNotFoundException;
 import com.familyleague.mapper.LeagueMapper;
 import com.familyleague.repository.LeagueRepository;
 import com.familyleague.service.LeagueService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class LeagueServiceImpl implements LeagueService {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(LeagueServiceImpl.class);
+
     private final LeagueRepository leagueRepository;
     private final LeagueMapper leagueMapper;
+
+    public LeagueServiceImpl(LeagueRepository leagueRepository, LeagueMapper leagueMapper) {
+        this.leagueRepository = leagueRepository;
+        this.leagueMapper = leagueMapper;
+    }
 
     @Override
     @Transactional
     public LeagueResponse createLeague(CreateLeagueRequest request) {
         log.debug("Creating league with code: {}", request.getCode());
-        
+
         if (leagueRepository.existsByCode(request.getCode())) {
             throw new ConflictException("League with code already exists: " + request.getCode());
         }
-        
+
         League league = League.builder()
                 .code(request.getCode())
                 .name(request.getName())
                 .sportType(request.getSportType() != null ? request.getSportType() : "CRICKET")
                 .description(request.getDescription())
                 .build();
-        
+
         league = leagueRepository.save(league);
         log.info("League created with ID: {}", league.getId());
         return leagueMapper.toResponse(league);

@@ -2,7 +2,7 @@ package com.familyleague.controller;
 
 import com.familyleague.dto.request.LoginRequest;
 import com.familyleague.dto.request.RegisterRequest;
-import com.familyleague.dto.response.ApiResponse;
+import com.familyleague.dto.response.ApiResponseDto;
 import com.familyleague.dto.response.AuthResponse;
 import com.familyleague.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,10 +17,13 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Authentication")
 @RestController
 @RequestMapping("/api/auth")
-@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
 
     @PostMapping("/login")
     @Operation(summary = "Login with email and password",
@@ -31,9 +33,9 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Validation error — missing or malformed fields"),
             @ApiResponse(responseCode = "401", description = "Invalid credentials")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<AuthResponse>> login(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<AuthResponse>> login(
             @Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("Login successful",
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("Login successful",
                 authService.login(request)));
     }
 
@@ -45,10 +47,10 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Validation error"),
             @ApiResponse(responseCode = "409", description = "Email already in use")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<AuthResponse>> register(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<AuthResponse>> register(
             @Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(com.familyleague.dto.response.ApiResponse.ok("Registration successful",
+                .body(com.familyleague.dto.response.ApiResponseDto.ok("Registration successful",
                         authService.register(request)));
     }
 
@@ -59,9 +61,9 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "New access token issued"),
             @ApiResponse(responseCode = "401", description = "Refresh token invalid or expired")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<AuthResponse>> refreshToken(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<AuthResponse>> refreshToken(
             @RequestParam String refreshToken) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("Token refreshed",
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("Token refreshed",
                 authService.refreshToken(refreshToken)));
     }
 }

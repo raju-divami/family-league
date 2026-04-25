@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,10 +20,13 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Matches")
 @RestController
-@RequiredArgsConstructor
 public class MatchController {
 
     private final MatchService matchService;
+
+    public MatchController(MatchService matchService) {
+        this.matchService = matchService;
+    }
 
     @PostMapping("/admin/matches")
     @Operation(summary = "Create a match",
@@ -38,10 +40,10 @@ public class MatchController {
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
             @ApiResponse(responseCode = "404", description = "Season or team not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<MatchResponse>> createMatch(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<MatchResponse>> createMatch(
             @Valid @RequestBody CreateMatchRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(com.familyleague.dto.response.ApiResponse.ok("Match created",
+                .body(com.familyleague.dto.response.ApiResponseDto.ok("Match created",
                         matchService.createMatch(request.getSeasonId(), request)));
     }
 
@@ -57,11 +59,11 @@ public class MatchController {
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
             @ApiResponse(responseCode = "404", description = "Season or team not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<MatchResponse>> createMatchInSeason(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<MatchResponse>> createMatchInSeason(
             @Parameter(description = "Season ID") @PathVariable Long seasonId,
             @Valid @RequestBody CreateMatchRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(com.familyleague.dto.response.ApiResponse.ok("Match created",
+                .body(com.familyleague.dto.response.ApiResponseDto.ok("Match created",
                         matchService.createMatch(seasonId, request)));
     }
 
@@ -77,10 +79,10 @@ public class MatchController {
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
             @ApiResponse(responseCode = "404", description = "Match not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<MatchResponse>> updateMatch(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<MatchResponse>> updateMatch(
             @Parameter(description = "Match ID") @PathVariable Long id,
             @Valid @RequestBody UpdateMatchRequest request) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("Match updated",
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("Match updated",
                 matchService.updateMatch(id, request)));
     }
 
@@ -90,9 +92,9 @@ public class MatchController {
             @ApiResponse(responseCode = "200", description = "Match found"),
             @ApiResponse(responseCode = "404", description = "Match not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<MatchResponse>> getMatch(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<MatchResponse>> getMatch(
             @Parameter(description = "Match ID") @PathVariable Long id) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 matchService.getMatchById(id)));
     }
 
@@ -102,10 +104,10 @@ public class MatchController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Matches returned")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<PagedResponse<MatchResponse>>> getAllMatches(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<PagedResponse<MatchResponse>>> getAllMatches(
             @Parameter(description = "Filter by season ID (optional)") @RequestParam(required = false) Long seasonId,
             Pageable pageable) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 matchService.getAllMatches(seasonId, pageable)));
     }
 
@@ -115,10 +117,10 @@ public class MatchController {
             @ApiResponse(responseCode = "200", description = "Matches returned"),
             @ApiResponse(responseCode = "404", description = "Season not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<PagedResponse<MatchResponse>>> getMatchesBySeason(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<PagedResponse<MatchResponse>>> getMatchesBySeason(
             @Parameter(description = "Season ID") @PathVariable Long seasonId,
             Pageable pageable) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 matchService.getMatchesBySeason(seasonId, pageable)));
     }
 }

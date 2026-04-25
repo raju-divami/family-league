@@ -2,11 +2,7 @@ package com.familyleague.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter
-@Setter
 @Schema(description = "Payload for updating an existing league")
 public class UpdateLeagueRequest {
 
@@ -20,4 +16,11 @@ public class UpdateLeagueRequest {
 
     @Schema(description = "Optional description", example = "Updated season description")
     private String description;
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getSportType() { return sportType; }
+    public void setSportType(String sportType) { this.sportType = sportType; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 }

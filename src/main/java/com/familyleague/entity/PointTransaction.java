@@ -1,9 +1,6 @@
 package com.familyleague.entity;
 
-import com.familyleague.entity.LeagueSeason;
-import com.familyleague.entity.User;
 import jakarta.persistence.*;
-import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -11,18 +8,12 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "point_transactions")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 @EntityListeners(AuditingEntityListener.class)
-
 public class PointTransaction {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "season_id", nullable = false)
@@ -47,4 +38,150 @@ public class PointTransaction {
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    public PointTransaction() {
+    }
+
+    public PointTransaction(Long id, LeagueSeason season, User user, String sourceType, Long sourceId, String ruleCode, Integer points, LocalDateTime createdAt) {
+        this.id = id;
+        this.season = season;
+        this.user = user;
+        this.sourceType = sourceType;
+        this.sourceId = sourceId;
+        this.ruleCode = ruleCode;
+        this.points = points;
+        this.createdAt = createdAt;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Long id;
+        private LeagueSeason season;
+        private User user;
+        private String sourceType;
+        private Long sourceId;
+        private String ruleCode;
+        private Integer points;
+        private LocalDateTime createdAt;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder season(LeagueSeason season) {
+            this.season = season;
+            return this;
+        }
+
+        public Builder user(User user) {
+            this.user = user;
+            return this;
+        }
+
+        public Builder sourceType(String sourceType) {
+            this.sourceType = sourceType;
+            return this;
+        }
+
+        public Builder sourceId(Long sourceId) {
+            this.sourceId = sourceId;
+            return this;
+        }
+
+        public Builder ruleCode(String ruleCode) {
+            this.ruleCode = ruleCode;
+            return this;
+        }
+
+        public Builder points(Integer points) {
+            this.points = points;
+            return this;
+        }
+
+        public Builder createdAt(LocalDateTime createdAt) {
+            this.createdAt = createdAt;
+            return this;
+        }
+
+        public PointTransaction build() {
+            PointTransaction obj = new PointTransaction();
+            obj.id = this.id;
+            obj.season = this.season;
+            obj.user = this.user;
+            obj.sourceType = this.sourceType;
+            obj.sourceId = this.sourceId;
+            obj.ruleCode = this.ruleCode;
+            obj.points = this.points;
+            obj.createdAt = this.createdAt;
+            return obj;
+        }
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public LeagueSeason getSeason() {
+        return season;
+    }
+
+    public void setSeason(LeagueSeason season) {
+        this.season = season;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public String getSourceType() {
+        return sourceType;
+    }
+
+    public void setSourceType(String sourceType) {
+        this.sourceType = sourceType;
+    }
+
+    public Long getSourceId() {
+        return sourceId;
+    }
+
+    public void setSourceId(Long sourceId) {
+        this.sourceId = sourceId;
+    }
+
+    public String getRuleCode() {
+        return ruleCode;
+    }
+
+    public void setRuleCode(String ruleCode) {
+        this.ruleCode = ruleCode;
+    }
+
+    public Integer getPoints() {
+        return points;
+    }
+
+    public void setPoints(Integer points) {
+        this.points = points;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

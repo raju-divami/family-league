@@ -17,19 +17,19 @@ import com.familyleague.repository.PlayerRepository;
 import com.familyleague.repository.TeamRepository;
 import com.familyleague.repository.UserRepository;
 import com.familyleague.service.MatchPredictionService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class MatchPredictionServiceImpl implements MatchPredictionService {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(MatchPredictionServiceImpl.class);
+
     private final MatchPredictionRepository predictionRepository;
     private final MatchRepository matchRepository;
     private final UserRepository userRepository;
@@ -37,49 +37,63 @@ public class MatchPredictionServiceImpl implements MatchPredictionService {
     private final PlayerRepository playerRepository;
     private final PredictionMapper predictionMapper;
 
+    public MatchPredictionServiceImpl(MatchPredictionRepository predictionRepository,
+                                      MatchRepository matchRepository,
+                                      UserRepository userRepository,
+                                      TeamRepository teamRepository,
+                                      PlayerRepository playerRepository,
+                                      PredictionMapper predictionMapper) {
+        this.predictionRepository = predictionRepository;
+        this.matchRepository = matchRepository;
+        this.userRepository = userRepository;
+        this.teamRepository = teamRepository;
+        this.playerRepository = playerRepository;
+        this.predictionMapper = predictionMapper;
+    }
+
     @Override
     @Transactional
     public MatchPredictionResponse submitPrediction(Long matchId, Long userId, SubmitMatchPredictionRequest request) {
         log.debug("Submitting prediction for match: {} by user: {}", matchId, userId);
-        
+
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
-        
+
         if (LocalDateTime.now().isAfter(match.getPredictionLockTime())) {
             throw new PredictionLockedException("Predictions are locked for this match");
         }
-        
+
         if (predictionRepository.existsByMatchIdAndUserId(matchId, userId)) {
             throw new BusinessException("Prediction already submitted. Use update instead");
         }
-        
-        MatchPrediction.MatchPredictionBuilder builder = MatchPrediction.builder()
+
+        MatchPrediction.Builder builder = MatchPrediction.builder()
                 .match(match)
                 .season(match.getSeason())
                 .user(user)
                 .status("SUBMITTED")
                 .submittedAt(LocalDateTime.now());
-        
+
         if (request.getPredictedWinnerTeamId() != null) {
             Team winnerTeam = teamRepository.findById(request.getPredictedWinnerTeamId())
                     .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
             builder.predictedWinnerTeam(winnerTeam);
         }
-        
+
         if (request.getPredictedTossTeamId() != null) {
             Team tossTeam = teamRepository.findById(request.getPredictedTossTeamId())
                     .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
             builder.predictedTossTeam(tossTeam);
         }
-        
+
         if (request.getPredictedPlayerId() != null) {
             Player player = playerRepository.findById(request.getPredictedPlayerId())
                     .orElseThrow(() -> new ResourceNotFoundException("Player not found"));
             builder.predictedPlayer(player);
         }
-        
+
         MatchPrediction prediction = predictionRepository.save(builder.build());
         log.info("Prediction submitted for match: {} by user: {}", matchId, userId);
         return predictionMapper.toMatchResponse(prediction);
@@ -90,32 +104,32 @@ public class MatchPredictionServiceImpl implements MatchPredictionService {
     public MatchPredictionResponse updatePrediction(Long matchId, Long userId, SubmitMatchPredictionRequest request) {
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
-        
+
         if (LocalDateTime.now().isAfter(match.getPredictionLockTime())) {
             throw new PredictionLockedException("Predictions are locked for this match");
         }
-        
+
         MatchPrediction prediction = predictionRepository.findByMatchIdAndUserId(matchId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Prediction not found"));
-        
+
         if (request.getPredictedWinnerTeamId() != null) {
             Team winnerTeam = teamRepository.findById(request.getPredictedWinnerTeamId())
                     .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
             prediction.setPredictedWinnerTeam(winnerTeam);
         }
-        
+
         if (request.getPredictedTossTeamId() != null) {
             Team tossTeam = teamRepository.findById(request.getPredictedTossTeamId())
                     .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
             prediction.setPredictedTossTeam(tossTeam);
         }
-        
+
         if (request.getPredictedPlayerId() != null) {
             Player player = playerRepository.findById(request.getPredictedPlayerId())
                     .orElseThrow(() -> new ResourceNotFoundException("Player not found"));
             prediction.setPredictedPlayer(player);
         }
-        
+
         prediction = predictionRepository.save(prediction);
         log.info("Prediction updated for match: {} by user: {}", matchId, userId);
         return predictionMapper.toMatchResponse(prediction);
@@ -134,7 +148,7 @@ public class MatchPredictionServiceImpl implements MatchPredictionService {
     public List<MatchPredictionResponse> getPredictionsForMatch(Long matchId, Long requestingUserId) {
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
-        
+
         // Before lock: show only requesting user's prediction
         // After lock: show all predictions
         if (LocalDateTime.now().isBefore(match.getPredictionLockTime())) {
@@ -145,7 +159,7 @@ public class MatchPredictionServiceImpl implements MatchPredictionService {
                     .map(List::of)
                     .orElse(List.of()); // Return empty list if user hasn't predicted yet
         }
-        
+
         log.debug("After lock time - returning all predictions for match: {}", matchId);
         List<MatchPrediction> predictions = predictionRepository.findByMatchId(matchId);
         return predictions.stream().map(predictionMapper::toMatchResponse).toList();

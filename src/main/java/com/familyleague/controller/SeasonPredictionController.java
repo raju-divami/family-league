@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,11 +21,14 @@ import java.util.List;
 @Tag(name = "Season Predictions")
 @RestController
 @RequestMapping("/api/seasons/{seasonId}/predictions")
-@RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
 public class SeasonPredictionController {
 
     private final SeasonPredictionService predictionService;
+
+    public SeasonPredictionController(SeasonPredictionService predictionService) {
+        this.predictionService = predictionService;
+    }
 
     @PostMapping
     @Operation(summary = "Submit season table prediction",
@@ -40,12 +42,12 @@ public class SeasonPredictionController {
             @ApiResponse(responseCode = "409", description = "Prediction already submitted — use PUT to update"),
             @ApiResponse(responseCode = "423", description = "Season prediction window is closed")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<SeasonPredictionResponse>> submit(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<SeasonPredictionResponse>> submit(
             @Parameter(description = "Season ID") @PathVariable Long seasonId,
             @Valid @RequestBody SubmitSeasonPredictionRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                com.familyleague.dto.response.ApiResponse.ok("Season prediction submitted",
+                com.familyleague.dto.response.ApiResponseDto.ok("Season prediction submitted",
                         predictionService.submitPrediction(seasonId, principal.getId(), request)));
     }
 
@@ -56,10 +58,10 @@ public class SeasonPredictionController {
             @ApiResponse(responseCode = "401", description = "Not authenticated"),
             @ApiResponse(responseCode = "404", description = "No prediction submitted for this season")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<SeasonPredictionResponse>> getMyPrediction(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<SeasonPredictionResponse>> getMyPrediction(
             @Parameter(description = "Season ID") @PathVariable Long seasonId,
             @AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 predictionService.getMyPrediction(seasonId, principal.getId())));
     }
 
@@ -72,10 +74,10 @@ public class SeasonPredictionController {
             @ApiResponse(responseCode = "403", description = "Prediction window is still open"),
             @ApiResponse(responseCode = "404", description = "Season not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<List<SeasonPredictionResponse>>> getAllPredictions(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<List<SeasonPredictionResponse>>> getAllPredictions(
             @Parameter(description = "Season ID") @PathVariable Long seasonId,
             @AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 predictionService.getPredictionsForSeason(seasonId, principal.getId())));
     }
 }

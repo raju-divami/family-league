@@ -14,18 +14,18 @@ import com.familyleague.repository.MatchResultRepository;
 import com.familyleague.repository.PointTransactionRepository;
 import com.familyleague.repository.SeasonMemberRepository;
 import com.familyleague.service.LeaderboardService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class LeaderboardServiceImpl implements LeaderboardService {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(LeaderboardServiceImpl.class);
+
     private final LeaderboardRepository leaderboardRepository;
     private final PointTransactionRepository pointTransactionRepository;
     private final MatchPredictionRepository predictionRepository;
@@ -34,51 +34,67 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     private final LeaderboardMapper leaderboardMapper;
     private final PointTransactionMapper pointTransactionMapper;
 
+    public LeaderboardServiceImpl(LeaderboardRepository leaderboardRepository,
+                                  PointTransactionRepository pointTransactionRepository,
+                                  MatchPredictionRepository predictionRepository,
+                                  MatchResultRepository resultRepository,
+                                  SeasonMemberRepository seasonMemberRepository,
+                                  LeaderboardMapper leaderboardMapper,
+                                  PointTransactionMapper pointTransactionMapper) {
+        this.leaderboardRepository = leaderboardRepository;
+        this.pointTransactionRepository = pointTransactionRepository;
+        this.predictionRepository = predictionRepository;
+        this.resultRepository = resultRepository;
+        this.seasonMemberRepository = seasonMemberRepository;
+        this.leaderboardMapper = leaderboardMapper;
+        this.pointTransactionMapper = pointTransactionMapper;
+    }
+
     @Override
     @Transactional
     public void recalculateLeaderboard(Long seasonId) {
         log.info("Recalculating leaderboard for season: {}", seasonId);
-        
+
         // Clear existing point transactions for this season
         pointTransactionRepository.deleteBySeasonId(seasonId);
-        
+
         // Reset all leaderboard entries for this season
         List<Leaderboard> leaderboardEntries = leaderboardRepository.findBySeasonId(seasonId);
         leaderboardEntries.forEach(entry -> {
             entry.setTotalPoints(0);
             entry.setRecalculatedAt(java.time.LocalDateTime.now());
         });
-        
+
         // Get all completed matches with results
         List<MatchResult> results = resultRepository.findByMatchSeasonId(seasonId);
-        
+
         for (MatchResult result : results) {
             List<MatchPrediction> predictions = predictionRepository.findByMatchId(result.getMatch().getId());
-            
+
             for (MatchPrediction prediction : predictions) {
                 int pointsEarned = 0;
-                
+
                 // Check winner prediction (1 point)
                 if (prediction.getPredictedWinnerTeam() != null && result.getWinnerTeam() != null &&
                         prediction.getPredictedWinnerTeam().getId().equals(result.getWinnerTeam().getId())) {
                     pointsEarned++;
                     createPointTransaction(prediction, result, "MATCH_WINNER", 1);
                 }
-                
+
                 // Check toss winner prediction (1 point)
                 if (prediction.getPredictedTossTeam() != null && result.getTossWinnerTeam() != null &&
                         prediction.getPredictedTossTeam().getId().equals(result.getTossWinnerTeam().getId())) {
                     pointsEarned++;
                     createPointTransaction(prediction, result, "TOSS_WINNER", 1);
                 }
-                
+
                 // Check player of match prediction (1 point)
                 if (prediction.getPredictedPlayer() != null && result.getPlayerOfMatch() != null &&
                         prediction.getPredictedPlayer().getId().equals(result.getPlayerOfMatch().getId())) {
                     pointsEarned++;
                     createPointTransaction(prediction, result, "PLAYER_OF_MATCH", 1);
                 }
-                
+
                 // Handle tie scenarios: if match is a tie and user predicted tie, award 1 point
                 // (This is in addition to other predictions)
                 if (result.isTie() && prediction.getPredictedWinnerTeam() == null) {
@@ -86,7 +102,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                     pointsEarned++;
                     createPointTransaction(prediction, result, "TIE_PREDICTION", 1);
                 }
-                
+
                 // Update leaderboard entry
                 if (pointsEarned > 0) {
                     Leaderboard entry = leaderboardRepository
@@ -97,14 +113,14 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                                     .totalPoints(0)
                                     .rankNo(0)
                                     .build());
-                    
+
                     entry.setTotalPoints(entry.getTotalPoints() + pointsEarned);
                     entry.setRecalculatedAt(java.time.LocalDateTime.now());
                     leaderboardRepository.save(entry);
                 }
             }
         }
-        
+
         // Update ranks based on total points (higher points = better rank)
         List<Leaderboard> sortedEntries = leaderboardRepository.findBySeasonIdOrderByTotalPointsDesc(seasonId);
         int rank = 1;
@@ -113,7 +129,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
             entry.setRecalculatedAt(java.time.LocalDateTime.now());
             leaderboardRepository.save(entry);
         }
-        
+
         log.info("Leaderboard recalculation completed for season: {} with {} entries", seasonId, sortedEntries.size());
     }
 
@@ -130,7 +146,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         List<PointTransaction> transactions = pointTransactionRepository.findBySeasonIdAndUserIdOrderByCreatedAtDesc(seasonId, userId);
         return transactions.stream().map(pointTransactionMapper::toResponse).toList();
     }
-    
+
     /**
      * Helper method to create a point transaction record
      */

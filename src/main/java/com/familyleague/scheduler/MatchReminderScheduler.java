@@ -6,8 +6,8 @@ import com.familyleague.repository.MatchPredictionRepository;
 import com.familyleague.repository.MatchRepository;
 import com.familyleague.repository.SeasonMemberRepository;
 import com.familyleague.service.NotificationService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -19,10 +19,10 @@ import java.util.List;
  * Sends prediction reminder emails to season members who have not yet submitted
  * a prediction for matches whose lock window is approaching.
  */
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class MatchReminderScheduler {
+
+    private static final Logger log = LoggerFactory.getLogger(MatchReminderScheduler.class);
 
     private final MatchRepository matchRepository;
     private final SeasonMemberRepository seasonMemberRepository;
@@ -31,6 +31,16 @@ public class MatchReminderScheduler {
 
     @Value("${app.scheduler.reminder-window-hours:2}")
     private int reminderWindowHours;
+
+    public MatchReminderScheduler(MatchRepository matchRepository,
+                                  SeasonMemberRepository seasonMemberRepository,
+                                  MatchPredictionRepository matchPredictionRepository,
+                                  NotificationService notificationService) {
+        this.matchRepository = matchRepository;
+        this.seasonMemberRepository = seasonMemberRepository;
+        this.matchPredictionRepository = matchPredictionRepository;
+        this.notificationService = notificationService;
+    }
 
     /**
      * Runs every 15 minutes (configurable via app.scheduler.reminder-interval-ms).

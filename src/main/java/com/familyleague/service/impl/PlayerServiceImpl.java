@@ -14,8 +14,8 @@ import com.familyleague.repository.PlayerRepository;
 import com.familyleague.repository.TeamPlayerRepository;
 import com.familyleague.repository.SeasonTeamRepository;
 import com.familyleague.service.PlayerService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,28 +23,38 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class PlayerServiceImpl implements PlayerService {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(PlayerServiceImpl.class);
+
     private final PlayerRepository playerRepository;
     private final TeamPlayerRepository teamPlayerRepository;
     private final SeasonTeamRepository seasonTeamRepository;
     private final PlayerMapper playerMapper;
 
+    public PlayerServiceImpl(PlayerRepository playerRepository,
+                             TeamPlayerRepository teamPlayerRepository,
+                             SeasonTeamRepository seasonTeamRepository,
+                             PlayerMapper playerMapper) {
+        this.playerRepository = playerRepository;
+        this.teamPlayerRepository = teamPlayerRepository;
+        this.seasonTeamRepository = seasonTeamRepository;
+        this.playerMapper = playerMapper;
+    }
+
     @Override
     @Transactional
     public PlayerResponse createPlayer(CreatePlayerRequest request) {
         log.debug("Creating player: {}", request.getFullName());
-        
+
         Player player = Player.builder()
                 .code(request.getCode())
                 .fullName(request.getFullName())
                 .shortName(request.getShortName())
                 .country(request.getCountry())
                 .build();
-        
+
         player = playerRepository.save(player);
         log.info("Player created with ID: {}", player.getId());
         return playerMapper.toResponse(player);
@@ -76,10 +86,10 @@ public class PlayerServiceImpl implements PlayerService {
     @Transactional
     public PlayerResponse updatePlayer(Long id, UpdatePlayerRequest request) {
         log.debug("Updating player: {}", id);
-        
+
         Player player = playerRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Player not found: " + id));
-        
+
         if (request.getFullName() != null) {
             player.setFullName(request.getFullName());
         }
@@ -89,7 +99,7 @@ public class PlayerServiceImpl implements PlayerService {
         if (request.getCountry() != null) {
             player.setCountry(request.getCountry());
         }
-        
+
         player = playerRepository.save(player);
         log.info("Player updated: {}", player.getId());
         return playerMapper.toResponse(player);
@@ -102,16 +112,16 @@ public class PlayerServiceImpl implements PlayerService {
                 .orElseThrow(() -> new ResourceNotFoundException("Season team not found: " + seasonTeamId));
         Player player = playerRepository.findById(playerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Player not found: " + playerId));
-        
+
         if (teamPlayerRepository.existsBySeasonTeamIdAndPlayerId(seasonTeamId, playerId)) {
             throw new ConflictException("Player already added to this season team");
         }
-        
+
         TeamPlayer tp = TeamPlayer.builder()
                 .seasonTeam(seasonTeam)
                 .player(player)
                 .build();
-        
+
         teamPlayerRepository.save(tp);
         log.info("Player {} added to season team {}", playerId, seasonTeamId);
     }

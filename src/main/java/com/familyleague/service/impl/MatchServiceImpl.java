@@ -1,4 +1,5 @@
 package com.familyleague.service.impl;
+
 import com.familyleague.dto.request.CreateMatchRequest;
 import com.familyleague.dto.request.UpdateMatchRequest;
 import com.familyleague.dto.response.MatchResponse;
@@ -13,21 +14,35 @@ import com.familyleague.repository.LeagueSeasonRepository;
 import com.familyleague.repository.MatchRepository;
 import com.familyleague.repository.TeamRepository;
 import com.familyleague.service.MatchService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
-@Slf4j
+
 @Service
-@RequiredArgsConstructor
 public class MatchServiceImpl implements MatchService {
+
+    private static final Logger log = LoggerFactory.getLogger(MatchServiceImpl.class);
+
     private final MatchRepository matchRepository;
     private final LeagueSeasonRepository seasonRepository;
     private final TeamRepository teamRepository;
     private final MatchMapper matchMapper;
+
+    public MatchServiceImpl(MatchRepository matchRepository,
+                            LeagueSeasonRepository seasonRepository,
+                            TeamRepository teamRepository,
+                            MatchMapper matchMapper) {
+        this.matchRepository = matchRepository;
+        this.seasonRepository = seasonRepository;
+        this.teamRepository = teamRepository;
+        this.matchMapper = matchMapper;
+    }
+
     @Override
     @Transactional
     public MatchResponse createMatch(Long seasonId, CreateMatchRequest request) {
@@ -39,7 +54,7 @@ public class MatchServiceImpl implements MatchService {
         Team awayTeam = teamRepository.findById(request.getAwayTeamId())
                 .orElseThrow(() -> new ResourceNotFoundException("Away team not found"));
         LocalDateTime lockTime = request.getStartTime()
-                .minusHours(season.getMatchPredictionLockHours() != null ? 
+                .minusHours(season.getMatchPredictionLockHours() != null ?
                         season.getMatchPredictionLockHours() : 1);
         Match match = Match.builder()
                 .season(season)
@@ -56,6 +71,7 @@ public class MatchServiceImpl implements MatchService {
         log.info("Match created with ID: {}", match.getId());
         return matchMapper.toResponse(match);
     }
+
     @Override
     @Transactional(readOnly = true)
     public MatchResponse getMatchById(Long id) {
@@ -63,6 +79,7 @@ public class MatchServiceImpl implements MatchService {
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + id));
         return matchMapper.toResponse(match);
     }
+
     @Override
     @Transactional(readOnly = true)
     public PagedResponse<MatchResponse> getMatchesBySeason(Long seasonId, Pageable pageable) {
@@ -98,12 +115,12 @@ public class MatchServiceImpl implements MatchService {
     @Transactional
     public MatchResponse updateMatch(Long id, UpdateMatchRequest request) {
         log.debug("Updating match: {}", id);
-        
+
         Match match = matchRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + id));
-        
+
         boolean startTimeChanged = false;
-        
+
         if (request.getMatchNo() != null) {
             match.setMatchNo(request.getMatchNo());
         }
@@ -127,21 +144,21 @@ public class MatchServiceImpl implements MatchService {
             match.setStartTime(request.getStartTime());
             startTimeChanged = true;
         }
-        
+
         // Recalculate predictionLockTime if startTime changed
         if (startTimeChanged) {
             LeagueSeason season = match.getSeason();
             LocalDateTime lockTime = match.getStartTime()
-                    .minusHours(season.getMatchPredictionLockHours() != null ? 
+                    .minusHours(season.getMatchPredictionLockHours() != null ?
                             season.getMatchPredictionLockHours() : 1);
             match.setPredictionLockTime(lockTime);
         }
-        
+
         match = matchRepository.save(match);
         log.info("Match updated: {}", match.getId());
         return matchMapper.toResponse(match);
     }
-    
+
     @Override
     @Transactional
     public void lockMatch(Long matchId) {

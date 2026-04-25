@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,10 +20,13 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Leagues")
 @RestController
-@RequiredArgsConstructor
 public class LeagueController {
 
     private final LeagueService leagueService;
+
+    public LeagueController(LeagueService leagueService) {
+        this.leagueService = leagueService;
+    }
 
     @PostMapping("/admin/leagues")
     @Operation(summary = "Create a league", description = "Creates a new league master record. League code must be unique.")
@@ -37,10 +39,10 @@ public class LeagueController {
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
             @ApiResponse(responseCode = "409", description = "League code already exists")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<LeagueResponse>> createLeague(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<LeagueResponse>> createLeague(
             @Valid @RequestBody CreateLeagueRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                com.familyleague.dto.response.ApiResponse.ok("League created",
+                com.familyleague.dto.response.ApiResponseDto.ok("League created",
                         leagueService.createLeague(request)));
     }
 
@@ -50,9 +52,9 @@ public class LeagueController {
             @ApiResponse(responseCode = "200", description = "League found"),
             @ApiResponse(responseCode = "404", description = "League not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<LeagueResponse>> getLeague(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<LeagueResponse>> getLeague(
             @Parameter(description = "League ID") @PathVariable Long id) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 leagueService.getLeagueById(id)));
     }
 
@@ -61,9 +63,9 @@ public class LeagueController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Leagues returned")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<PagedResponse<LeagueResponse>>> getAllLeagues(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<PagedResponse<LeagueResponse>>> getAllLeagues(
             Pageable pageable) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 leagueService.getAllLeagues(pageable)));
     }
 
@@ -78,10 +80,10 @@ public class LeagueController {
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
             @ApiResponse(responseCode = "404", description = "League not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<LeagueResponse>> updateLeague(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<LeagueResponse>> updateLeague(
             @Parameter(description = "League ID") @PathVariable Long id,
             @Valid @RequestBody UpdateLeagueRequest request) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("League updated",
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("League updated",
                 leagueService.updateLeague(id, request)));
     }
 
@@ -95,9 +97,9 @@ public class LeagueController {
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
             @ApiResponse(responseCode = "404", description = "League not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<Void>> deleteLeague(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<Void>> deleteLeague(
             @Parameter(description = "League ID") @PathVariable Long id) {
         leagueService.deleteLeague(id);
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("League deleted"));
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("League deleted"));
     }
 }

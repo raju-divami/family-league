@@ -1,11 +1,7 @@
 package com.familyleague.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter
-@Setter
 @Schema(description = "Payload for publishing the official match result")
 public class PublishResultRequest {
 
@@ -23,4 +19,15 @@ public class PublishResultRequest {
 
     @Schema(description = "Optional remarks about the result", example = "MI won by 6 wickets")
     private String remarks;
+
+    public Long getWinnerTeamId() { return winnerTeamId; }
+    public void setWinnerTeamId(Long winnerTeamId) { this.winnerTeamId = winnerTeamId; }
+    public Long getTossWinnerTeamId() { return tossWinnerTeamId; }
+    public void setTossWinnerTeamId(Long tossWinnerTeamId) { this.tossWinnerTeamId = tossWinnerTeamId; }
+    public Long getPlayerOfMatchId() { return playerOfMatchId; }
+    public void setPlayerOfMatchId(Long playerOfMatchId) { this.playerOfMatchId = playerOfMatchId; }
+    public Boolean getIsTie() { return isTie; }
+    public void setIsTie(Boolean isTie) { this.isTie = isTie; }
+    public String getRemarks() { return remarks; }
+    public void setRemarks(String remarks) { this.remarks = remarks; }
 }

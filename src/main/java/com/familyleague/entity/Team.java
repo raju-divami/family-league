@@ -1,15 +1,9 @@
 package com.familyleague.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
 
 @Entity
 @Table(name = "teams")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Team extends BaseEntity {
 
     @Column(name = "code", length = 50, unique = true, nullable = false)
@@ -24,7 +18,85 @@ public class Team extends BaseEntity {
     @Column(name = "logo_url", length = 500)
     private String logoUrl;
 
-    @Column(name = "deleted", nullable = false)
-    @Builder.Default
-    private boolean deleted = false;
+    public Team() {
+    }
+
+    public Team(String code, String name, String shortName, String logoUrl) {
+        this.code = code;
+        this.name = name;
+        this.shortName = shortName;
+        this.logoUrl = logoUrl;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private String code;
+        private String name;
+        private String shortName;
+        private String logoUrl;
+
+        public Builder code(String code) {
+            this.code = code;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder shortName(String shortName) {
+            this.shortName = shortName;
+            return this;
+        }
+
+        public Builder logoUrl(String logoUrl) {
+            this.logoUrl = logoUrl;
+            return this;
+        }
+
+        public Team build() {
+            Team obj = new Team();
+            obj.code = this.code;
+            obj.name = this.name;
+            obj.shortName = this.shortName;
+            obj.logoUrl = this.logoUrl;
+            return obj;
+        }
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getShortName() {
+        return shortName;
+    }
+
+    public void setShortName(String shortName) {
+        this.shortName = shortName;
+    }
+
+    public String getLogoUrl() {
+        return logoUrl;
+    }
+
+    public void setLogoUrl(String logoUrl) {
+        this.logoUrl = logoUrl;
+    }
 }

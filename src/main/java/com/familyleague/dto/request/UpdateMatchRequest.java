@@ -1,17 +1,7 @@
 package com.familyleague.dto.request;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import java.time.LocalDateTime;
 
-/**
- * Request DTO for updating an existing match.
- * All fields are optional - only provided fields will be updated.
- * PredictionLockTime will be automatically recalculated if startTime is updated.
- */
-@Getter
-@Setter
 public class UpdateMatchRequest {
 
     private Integer matchNo;
@@ -25,4 +15,17 @@ public class UpdateMatchRequest {
     private String venue;
 
     private LocalDateTime startTime;
+
+    public Integer getMatchNo() { return matchNo; }
+    public void setMatchNo(Integer matchNo) { this.matchNo = matchNo; }
+    public String getStage() { return stage; }
+    public void setStage(String stage) { this.stage = stage; }
+    public Long getHomeTeamId() { return homeTeamId; }
+    public void setHomeTeamId(Long homeTeamId) { this.homeTeamId = homeTeamId; }
+    public Long getAwayTeamId() { return awayTeamId; }
+    public void setAwayTeamId(Long awayTeamId) { this.awayTeamId = awayTeamId; }
+    public String getVenue() { return venue; }
+    public void setVenue(String venue) { this.venue = venue; }
+    public LocalDateTime getStartTime() { return startTime; }
+    public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
 }

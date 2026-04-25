@@ -17,8 +17,8 @@ import com.familyleague.repository.LeagueSeasonRepository;
 import com.familyleague.repository.SeasonTeamRepository;
 import com.familyleague.repository.TeamRepository;
 import com.familyleague.service.TeamService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,33 +26,45 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class TeamServiceImpl implements TeamService {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(TeamServiceImpl.class);
+
     private final TeamRepository teamRepository;
     private final SeasonTeamRepository seasonTeamRepository;
     private final LeagueSeasonRepository seasonRepository;
     private final TeamMapper teamMapper;
     private final SeasonTeamMapper seasonTeamMapper;
 
+    public TeamServiceImpl(TeamRepository teamRepository,
+                           SeasonTeamRepository seasonTeamRepository,
+                           LeagueSeasonRepository seasonRepository,
+                           TeamMapper teamMapper,
+                           SeasonTeamMapper seasonTeamMapper) {
+        this.teamRepository = teamRepository;
+        this.seasonTeamRepository = seasonTeamRepository;
+        this.seasonRepository = seasonRepository;
+        this.teamMapper = teamMapper;
+        this.seasonTeamMapper = seasonTeamMapper;
+    }
+
     @Override
     @Transactional
     public TeamResponse createTeam(CreateTeamRequest request) {
         log.debug("Creating team: {}", request.getName());
-        
+
         if (teamRepository.existsByCode(request.getCode())) {
             throw new ConflictException("Team with code already exists: " + request.getCode());
         }
-        
+
         Team team = Team.builder()
                 .code(request.getCode())
                 .name(request.getName())
                 .shortName(request.getShortName())
                 .logoUrl(request.getLogoUrl())
                 .build();
-        
+
         team = teamRepository.save(team);
         log.info("Team created with ID: {}", team.getId());
         return teamMapper.toResponse(team);
@@ -84,10 +96,10 @@ public class TeamServiceImpl implements TeamService {
     @Transactional
     public TeamResponse updateTeam(Long id, UpdateTeamRequest request) {
         log.debug("Updating team: {}", id);
-        
+
         Team team = teamRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + id));
-        
+
         if (request.getName() != null) {
             team.setName(request.getName());
         }
@@ -97,7 +109,7 @@ public class TeamServiceImpl implements TeamService {
         if (request.getLogoUrl() != null) {
             team.setLogoUrl(request.getLogoUrl());
         }
-        
+
         team = teamRepository.save(team);
         log.info("Team updated: {}", team.getId());
         return teamMapper.toResponse(team);
@@ -107,10 +119,10 @@ public class TeamServiceImpl implements TeamService {
     @Transactional
     public void deleteTeam(Long id) {
         log.debug("Soft deleting team: {}", id);
-        
+
         Team team = teamRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + id));
-        
+
         team.setDeleted(true);
         teamRepository.save(team);
         log.info("Team soft deleted: {}", id);
@@ -123,16 +135,16 @@ public class TeamServiceImpl implements TeamService {
                 .orElseThrow(() -> new ResourceNotFoundException("Season not found: " + seasonId));
         Team team = teamRepository.findById(request.getTeamId())
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + request.getTeamId()));
-        
+
         if (seasonTeamRepository.existsBySeasonIdAndTeamId(seasonId, request.getTeamId())) {
             throw new ConflictException("Team already added to this season");
         }
-        
+
         SeasonTeam seasonTeam = SeasonTeam.builder()
                 .season(season)
                 .team(team)
                 .build();
-        
+
         seasonTeam = seasonTeamRepository.save(seasonTeam);
         log.info("Team {} added to season {}", request.getTeamId(), seasonId);
         return seasonTeamMapper.toResponse(seasonTeam);

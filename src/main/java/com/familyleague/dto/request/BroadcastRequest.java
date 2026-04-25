@@ -3,13 +3,9 @@ package com.familyleague.dto.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.util.List;
 
-@Getter
-@Setter
 @Schema(description = "Admin broadcast message to a selected list of users")
 public class BroadcastRequest {
 
@@ -27,4 +23,13 @@ public class BroadcastRequest {
     @NotEmpty
     @Schema(description = "List of user IDs to broadcast to", example = "[1, 2, 3]", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<Long> userIds;
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+    public String getEventType() { return eventType; }
+    public void setEventType(String eventType) { this.eventType = eventType; }
+    public List<Long> getUserIds() { return userIds; }
+    public void setUserIds(List<Long> userIds) { this.userIds = userIds; }
 }

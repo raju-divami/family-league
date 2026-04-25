@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,11 +18,14 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Match Results")
 @RestController
-@RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
 public class MatchResultController {
 
     private final MatchResultService matchResultService;
+
+    public MatchResultController(MatchResultService matchResultService) {
+        this.matchResultService = matchResultService;
+    }
 
     @PostMapping("/admin/matches/{matchId}/result")
     @Operation(summary = "Publish match result",
@@ -37,11 +39,11 @@ public class MatchResultController {
             @ApiResponse(responseCode = "404", description = "Match not found"),
             @ApiResponse(responseCode = "409", description = "Result already published for this match")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<MatchResultResponse>> publishResult(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<MatchResultResponse>> publishResult(
             @Parameter(description = "Match ID") @PathVariable Long matchId,
             @Valid @RequestBody PublishResultRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("Result published",
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("Result published",
                 matchResultService.publishResult(matchId, request, principal.getId())));
     }
 
@@ -52,9 +54,9 @@ public class MatchResultController {
             @ApiResponse(responseCode = "401", description = "Not authenticated"),
             @ApiResponse(responseCode = "404", description = "Match or result not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<MatchResultResponse>> getResult(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<MatchResultResponse>> getResult(
             @Parameter(description = "Match ID") @PathVariable Long matchId) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 matchResultService.getResultByMatchId(matchId)));
     }
 }

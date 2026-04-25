@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,11 +22,14 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Users")
 @RestController
 @RequestMapping("/api/users")
-@RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
     private final UserService userService;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @GetMapping("/me")
     @Operation(summary = "Get current user profile")
@@ -35,9 +37,9 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Profile returned"),
             @ApiResponse(responseCode = "401", description = "Not authenticated")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<UserProfileResponse>> getMyProfile(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<UserProfileResponse>> getMyProfile(
             @AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 userService.getProfile(principal.getId())));
     }
 
@@ -49,10 +51,10 @@ public class UserController {
             @ApiResponse(responseCode = "400", description = "Validation error"),
             @ApiResponse(responseCode = "401", description = "Not authenticated")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<UserProfileResponse>> updateMyProfile(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<UserProfileResponse>> updateMyProfile(
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody UpdateProfileRequest request) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("Profile updated",
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("Profile updated",
                 userService.updateProfile(principal.getId(), request)));
     }
 
@@ -65,9 +67,9 @@ public class UserController {
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
             @ApiResponse(responseCode = "404", description = "User not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<UserResponse>> getUserById(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<UserResponse>> getUserById(
             @Parameter(description = "User ID") @PathVariable Long id) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 userService.getUserById(id)));
     }
 
@@ -79,9 +81,9 @@ public class UserController {
             @ApiResponse(responseCode = "401", description = "Not authenticated"),
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<PagedResponse<UserResponse>>> getAllUsers(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<PagedResponse<UserResponse>>> getAllUsers(
             Pageable pageable) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 userService.getAllUsers(pageable)));
     }
 
@@ -95,9 +97,9 @@ public class UserController {
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required"),
             @ApiResponse(responseCode = "404", description = "User not found")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<Void>> deactivateUser(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<Void>> deactivateUser(
             @Parameter(description = "User ID") @PathVariable Long id) {
         userService.deactivateUser(id);
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("User deactivated"));
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("User deactivated"));
     }
 }

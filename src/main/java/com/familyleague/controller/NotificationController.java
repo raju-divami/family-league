@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,11 +20,14 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Notifications")
 @RestController
 @RequestMapping("/api/notifications")
-@RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
 public class NotificationController {
 
     private final NotificationService notificationService;
+
+    public NotificationController(NotificationService notificationService) {
+        this.notificationService = notificationService;
+    }
 
     @GetMapping("/me")
     @Operation(summary = "Get my notifications",
@@ -34,9 +36,9 @@ public class NotificationController {
             @ApiResponse(responseCode = "200", description = "Notifications returned"),
             @ApiResponse(responseCode = "401", description = "Not authenticated")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<PagedResponse<NotificationResponse>>> getMyNotifications(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<PagedResponse<NotificationResponse>>> getMyNotifications(
             @AuthenticationPrincipal UserPrincipal principal, Pageable pageable) {
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok(
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok(
                 notificationService.getMyNotifications(principal.getId(), pageable)));
     }
 
@@ -51,10 +53,10 @@ public class NotificationController {
             @ApiResponse(responseCode = "401", description = "Not authenticated"),
             @ApiResponse(responseCode = "403", description = "Not authorized — ADMIN role required")
     })
-    public ResponseEntity<com.familyleague.dto.response.ApiResponse<Void>> broadcast(
+    public ResponseEntity<com.familyleague.dto.response.ApiResponseDto<Void>> broadcast(
             @Valid @RequestBody BroadcastRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
         notificationService.broadcast(request, principal.getId());
-        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponse.ok("Broadcast sent successfully"));
+        return ResponseEntity.ok(com.familyleague.dto.response.ApiResponseDto.ok("Broadcast sent successfully"));
     }
 }

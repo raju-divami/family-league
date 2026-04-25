@@ -6,7 +6,8 @@ import com.familyleague.service.AuditService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.Authentication;
@@ -19,17 +20,18 @@ import java.util.Map;
 /**
  * JPA Entity Listener for automatic audit logging.
  * Captures INSERT, UPDATE, and DELETE operations on entities that extend BaseEntity.
- * 
+ *
  * Uses @PostPersist, @PostUpdate, and @PreRemove callbacks to log changes
  * to the audit_logs table via AuditService.
  */
-@Slf4j
 @Component
 public class AuditEntityListener {
 
+    private static final Logger log = LoggerFactory.getLogger(AuditEntityListener.class);
+
     private static AuditService auditService;
     private static ObjectMapper objectMapper;
-    
+
     // ThreadLocal to store old entity state before update/delete
     private static final ThreadLocal<Map<Object, String>> oldDataStore = ThreadLocal.withInitial(HashMap::new);
 
@@ -55,13 +57,13 @@ public class AuditEntityListener {
         if (!(entity instanceof BaseEntity baseEntity)) {
             return;
         }
-        
+
         try {
             String tableName = getTableName(entity);
             Long recordId = baseEntity.getId();
             String newData = serializeEntity(entity);
             Long changedBy = getCurrentUserId();
-            
+
             if (auditService != null) {
                 auditService.log(tableName, recordId, "INSERT", null, newData, changedBy);
                 log.debug("Audit log created for INSERT: table={}, recordId={}", tableName, recordId);
@@ -79,7 +81,7 @@ public class AuditEntityListener {
         if (!(entity instanceof BaseEntity)) {
             return;
         }
-        
+
         try {
             String oldData = serializeEntity(entity);
             oldDataStore.get().put(entity, oldData);
@@ -96,14 +98,14 @@ public class AuditEntityListener {
         if (!(entity instanceof BaseEntity baseEntity)) {
             return;
         }
-        
+
         try {
             String tableName = getTableName(entity);
             Long recordId = baseEntity.getId();
             String oldData = oldDataStore.get().remove(entity);
             String newData = serializeEntity(entity);
             Long changedBy = getCurrentUserId();
-            
+
             if (auditService != null) {
                 auditService.log(tableName, recordId, "UPDATE", oldData, newData, changedBy);
                 log.debug("Audit log created for UPDATE: table={}, recordId={}", tableName, recordId);
@@ -123,13 +125,13 @@ public class AuditEntityListener {
         if (!(entity instanceof BaseEntity baseEntity)) {
             return;
         }
-        
+
         try {
             String tableName = getTableName(entity);
             Long recordId = baseEntity.getId();
             String oldData = serializeEntity(entity);
             Long changedBy = getCurrentUserId();
-            
+
             if (auditService != null) {
                 auditService.log(tableName, recordId, "DELETE", oldData, null, changedBy);
                 log.debug("Audit log created for DELETE: table={}, recordId={}", tableName, recordId);
@@ -144,7 +146,7 @@ public class AuditEntityListener {
      */
     private String getTableName(Object entity) {
         Class<?> entityClass = entity.getClass();
-        
+
         // Check for @Table annotation
         if (entityClass.isAnnotationPresent(Table.class)) {
             Table table = entityClass.getAnnotation(Table.class);
@@ -152,7 +154,7 @@ public class AuditEntityListener {
                 return table.name();
             }
         }
-        
+
         // Fallback to entity class simple name
         return entityClass.getSimpleName();
     }

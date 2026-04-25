@@ -4,13 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDate;
 
-@Getter
-@Setter
 @Schema(description = "Payload for creating a season under a league")
 public class CreateSeasonRequest {
 
@@ -37,4 +33,17 @@ public class CreateSeasonRequest {
 
     @Schema(description = "Hours before each match when match predictions lock", example = "1", defaultValue = "1")
     private Integer matchPredictionLockHours = 1;
+
+    public String getSeasonCode() { return seasonCode; }
+    public void setSeasonCode(String seasonCode) { this.seasonCode = seasonCode; }
+    public String getSeasonName() { return seasonName; }
+    public void setSeasonName(String seasonName) { this.seasonName = seasonName; }
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    public Integer getPredictionLockHours() { return predictionLockHours; }
+    public void setPredictionLockHours(Integer predictionLockHours) { this.predictionLockHours = predictionLockHours; }
+    public Integer getMatchPredictionLockHours() { return matchPredictionLockHours; }
+    public void setMatchPredictionLockHours(Integer matchPredictionLockHours) { this.matchPredictionLockHours = matchPredictionLockHours; }
 }
